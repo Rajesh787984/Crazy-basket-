@@ -1,0 +1,40 @@
+
+<div class="p-4">
+  <h1 class="text-xl font-bold mb-4">My Wishlist ({{wishlistItems().length}} items)</h1>
+
+  @if (wishlistItems().length > 0) {
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      @for(product of wishlistItems(); track product.id) {
+        <div (click)="viewProduct(product.id)" class="bg-white rounded-lg overflow-hidden cursor-pointer border">
+          <div class="relative">
+            <img [src]="product.images[0]" [alt]="product.name" class="w-full aspect-[3/4] object-cover">
+            <button (click)="removeFromWishlist(product.id, $event)" class="absolute top-2 right-2 bg-white/80 rounded-full p-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
+          <div class="p-2">
+            <h3 class="font-bold truncate">{{ product.brand }}</h3>
+            <p class="text-sm text-gray-600 truncate">{{ product.name }}</p>
+            <div class="flex items-center space-x-2 mt-1">
+              <p class="font-bold">₹{{ product.price }}</p>
+              @if(product.discount > 0) {
+                <p class="text-xs text-gray-500 line-through">₹{{ product.originalPrice }}</p>
+              }
+            </div>
+             @if(product.discount > 0) {
+                 <p class="text-xs text-orange-500 font-semibold">({{ product.discount }}% OFF)</p>
+             }
+          </div>
+          <button (click)="moveToBag(product, $event)" class="w-full text-center py-2 font-bold text-pink-500 border-t">MOVE TO BAG</button>
+        </div>
+      }
+    </div>
+  } @else {
+     <div class="text-center py-20">
+        <h2 class="mt-4 text-xl font-bold">YOUR WISHLIST IS EMPTY</h2>
+        <p class="text-gray-500 mt-1">Add items that you like to your wishlist. Review them anytime and easily move them to the bag.</p>
+        <button (click)="stateService.navigateTo('home')" class="mt-6 px-6 py-2 bg-pink-500 text-white font-bold rounded-md">CONTINUE SHOPPING</button>
+      </div>
+  }
+
+</div>

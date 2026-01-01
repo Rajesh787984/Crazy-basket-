@@ -1,0 +1,168 @@
+
+@if (product(); as p) {
+  <div class="lg:flex lg:space-x-8 lg:p-4">
+    <!-- Image Gallery -->
+    <div class="lg:w-3/5">
+      <div class="relative h-96 lg:h-[32rem] overflow-hidden">
+        @for(image of p.images; track image; let i = $index) {
+          <div class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+              [class.opacity-100]="activeImageIndex() === i"
+              [class.opacity-0]="activeImageIndex() !== i">
+            <img [src]="image" [alt]="p.name + ' image ' + (i+1)" class="w-full h-full object-contain">
+          </div>
+        }
+      </div>
+      <div class="flex space-x-2 p-2 overflow-x-auto">
+        @for(image of p.images; track image; let i = $index) {
+          <img (click)="goToSlide(i)" [src]="image" [alt]="p.name + ' thumbnail ' + (i+1)" class="w-20 h-28 object-cover rounded-md cursor-pointer border-2" [class.border-pink-500]="i === activeImageIndex()" [class.border-transparent]="i !== activeImageIndex()">
+        }
+      </div>
+    </div>
+
+    <!-- Product Info -->
+    <div class="p-4 lg:p-0 lg:w-2/5">
+      <div class="flex justify-between items-start">
+        <div>
+          <h1 class="text-xl font-bold">{{ p.brand }}</h1>
+          <p class="text-gray-500">{{ p.name }}</p>
+        </div>
+        <div class="border rounded-md px-2 py-1 text-sm font-semibold flex items-center shrink-0">
+          {{ p.rating }} ★ | {{ formatReviews(p.reviews) }}
+        </div>
+      </div>
+      
+      <div class="flex items-baseline space-x-2 mt-2">
+        <p class="text-xl font-bold">₹{{ p.price }}</p>
+        <p class="text-sm text-gray-500 line-through">MRP ₹{{ p.originalPrice }}</p>
+        <p class="text-sm text-orange-500 font-bold">({{ p.discount }}% OFF)</p>
+      </div>
+      <p class="text-xs text-teal-600 font-semibold mt-1">inclusive of all taxes</p>
+
+      <!-- Size Selection -->
+      <div class="mt-4">
+        <div class="flex justify-between items-center">
+          <h3 class="font-bold">Select Size</h3>
+          <a href="#" class="text-sm font-semibold text-pink-500">Size Chart ></a>
+        </div>
+        <div class="flex flex-wrap gap-2 mt-2">
+          @for(size of p.sizes; track size.name) {
+            <button (click)="selectSize(size.name)" 
+                    [disabled]="!size.inStock"
+                    class="h-12 w-12 border rounded-full font-bold flex items-center justify-center transition-colors relative" 
+                    [class.bg-pink-500]="selectedSize() === size.name" 
+                    [class.text-white]="selectedSize() === size.name"
+                    [class.border-pink-500]="selectedSize() === size.name"
+                    [class.bg-gray-100]="!size.inStock"
+                    [class.text-gray-400]="!size.inStock"
+                    [class.cursor-not-allowed]="!size.inStock">
+              {{ size.name }}
+              @if(!size.inStock) {
+                <span class="absolute top-1/2 left-0 w-full h-0.5 bg-gray-400 transform -rotate-45"></span>
+              }
+            </button>
+          }
+        </div>
+      </div>
+      
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-2 mt-4">
+        <button (click)="addToBag()" class="w-1/2 py-3 border border-gray-300 rounded-md font-bold flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+          ADD TO BAG
+        </button>
+        <button (click)="buyNow()" class="w-1/2 py-3 bg-pink-500 text-white rounded-md font-bold flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+          BUY NOW
+        </button>
+      </div>
+
+      <!-- Product Details -->
+      <div class="mt-6 pt-4 border-t">
+        <h3 class="font-bold text-lg mb-2">Product Details</h3>
+        <p class="text-sm text-gray-600 mb-4">{{ p.details[0] }}</p>
+        <ul class="list-disc list-inside text-sm text-gray-600 space-y-1 mb-4">
+          @for(detail of p.details.slice(1); track detail) {
+            <li>{{ detail }}</li>
+          }
+        </ul>
+        <div class="grid grid-cols-2 text-sm gap-2">
+          <div>
+            <p class="font-semibold text-gray-800">Fit</p>
+            <p class="text-gray-600">{{ p.fit }}</p>
+          </div>
+          <div>
+            <p class="font-semibold text-gray-800">Fabric</p>
+            <p class="text-gray-600">{{ p.fabric }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Ratings & Reviews -->
+  <div class="mt-6 pt-4 border-t p-4">
+    <h3 class="font-bold text-lg mb-2">Ratings & Reviews</h3>
+    <!-- Existing reviews display -->
+    <div class="flex items-center">
+      <!-- ... -->
+    </div>
+
+    <!-- User Submitted Reviews -->
+    <div class="mt-6">
+      @for(review of productReviews(); track review.date) {
+        <div class="border-b py-4">
+          <div class="flex items-center mb-1">
+            <span class="font-semibold">{{review.author}}</span>
+            <div class="flex items-center ml-4">
+              @for (star of [1,2,3,4,5]; track star) {
+                <svg class="w-4 h-4" [class.text-yellow-400]="star <= review.rating" [class.text-gray-300]="star > review.rating" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+              }
+            </div>
+          </div>
+          <p class="text-gray-600 text-sm">{{review.comment}}</p>
+          <p class="text-xs text-gray-400 mt-1">{{review.date | date:'medium'}}</p>
+        </div>
+      }
+    </div>
+
+    <!-- Write a Review -->
+    <div class="mt-6">
+      <button (click)="showReviewForm.set(!showReviewForm())" class="font-bold text-pink-500">Write a Review</button>
+      @if (showReviewForm()) {
+        <form [formGroup]="reviewForm" (ngSubmit)="submitReview()" class="mt-4 p-4 border rounded-lg">
+          <div class="mb-2">
+            <label class="font-semibold">Your Rating</label>
+            <div class="flex items-center">
+              <input type="number" formControlName="rating" class="hidden">
+               @for (star of [1,2,3,4,5]; track star) {
+                  <svg (click)="reviewForm.controls.rating.setValue(star)" class="w-6 h-6 cursor-pointer" [class.text-yellow-400]="star <= reviewForm.value.rating!" [class.text-gray-300]="star > reviewForm.value.rating!" fill="currentColor" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+               }
+            </div>
+          </div>
+          <textarea formControlName="comment" placeholder="Write your review here..." rows="4" class="w-full p-2 border rounded-md"></textarea>
+          <button type="submit" [disabled]="reviewForm.invalid" class="mt-2 px-4 py-2 bg-pink-500 text-white font-semibold rounded-lg disabled:bg-gray-300">Submit Review</button>
+        </form>
+      }
+    </div>
+  </div>
+
+  <!-- Similar Products -->
+  <div class="mt-6 pt-4 border-t p-4">
+    <h3 class="font-bold text-lg mb-4">SIMILAR PRODUCTS</h3>
+    <div class="flex overflow-x-auto space-x-4">
+      @for(sp of similarProducts(); track sp.id) {
+        <div (click)="viewSimilarProduct(sp.id)" class="w-40 shrink-0 cursor-pointer">
+          <img [src]="sp.images[0]" [alt]="sp.name" class="w-full aspect-[3/4] object-cover rounded-md">
+          <h4 class="font-bold truncate mt-2">{{ sp.brand }}</h4>
+          <p class="text-sm text-gray-500 truncate">{{ sp.name }}</p>
+          <p class="font-semibold">₹{{ sp.price }}</p>
+        </div>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="p-8 text-center text-gray-500">
+    <p>Product not found.</p>
+  </div>
+}

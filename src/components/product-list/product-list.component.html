@@ -1,0 +1,132 @@
+
+<div class="flex">
+  <!-- Filter Sidebar (Desktop) -->
+  <aside class="hidden lg:block w-64 p-4 border-r">
+    <h3 class="text-lg font-bold mb-4">FILTERS</h3>
+    <div class="space-y-6">
+      <!-- Price -->
+      <div>
+        <h4 class="font-semibold mb-2">PRICE</h4>
+        @for(range of priceRanges; track range.value) {
+          <div class="flex items-center">
+            <input type="checkbox" [id]="'price-desk-'+range.value" [value]="range.value" (change)="toggleFilter('priceRanges', range.value)" [checked]="localFilters().priceRanges.includes(range.value)" class="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+            <label [for]="'price-desk-'+range.value" class="ml-3 min-w-0 flex-1 text-gray-500">{{ range.label }}</label>
+          </div>
+        }
+      </div>
+      <!-- Discount -->
+      <div>
+        <h4 class="font-semibold mb-2">DISCOUNT RANGE</h4>
+        @for(discount of discounts; track discount) {
+          <div class="flex items-center">
+            <input type="checkbox" [id]="'discount-desk-'+discount" [value]="discount" (change)="toggleFilter('discounts', discount)" [checked]="localFilters().discounts.includes(discount)" class="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+            <label [for]="'discount-desk-'+discount" class="ml-3 min-w-0 flex-1 text-gray-500">{{ discount }}% and above</label>
+          </div>
+        }
+      </div>
+    </div>
+     <div class="mt-8 flex space-x-2">
+        <button (click)="clearFilters()" class="w-1/2 py-2 border border-gray-300 rounded font-bold">CLEAR</button>
+        <button (click)="applyFilters()" class="w-1/2 py-2 bg-pink-500 text-white rounded font-bold">APPLY</button>
+    </div>
+  </aside>
+
+  <!-- Product Grid -->
+  <div class="flex-1 p-2">
+    <div class="mb-2 px-2 flex justify-between items-center">
+      <div>
+        <h1 class="text-lg font-bold">{{ pageTitle() }}</h1>
+        <p class="text-sm text-gray-500">{{ filteredAndSortedProducts().length }} Items</p>
+      </div>
+      <div class="hidden lg:block">
+        <select (change)="onSortChange($event)" class="border rounded-md p-2">
+          <option value="recommended">Recommended</option>
+          <option value="price_asc">Price: Low to High</option>
+          <option value="price_desc">Price: High to Low</option>
+          <option value="discount_desc">Better Discount</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+      @for(product of filteredAndSortedProducts(); track product.id) {
+        <div (click)="viewProduct(product.id)" class="bg-white rounded-lg overflow-hidden cursor-pointer group">
+          <div class="relative">
+            <img [src]="product.images[0]" [alt]="product.name" class="w-full aspect-[3/4] object-cover">
+            <div class="absolute bottom-2 left-2 bg-white/80 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center">
+              {{ product.rating }} ★ | {{ formatReviews(product.reviews) }}
+            </div>
+          </div>
+          <div class="p-2">
+            <h3 class="font-bold truncate">{{ product.brand }}</h3>
+            <p class="text-sm text-gray-600 truncate">{{ product.name }}</p>
+            <div class="flex items-center space-x-2 mt-1">
+              <p class="font-bold">₹{{ product.price }}</p>
+              @if(product.discount > 0) {
+                <p class="text-xs text-gray-500 line-through">₹{{ product.originalPrice }}</p>
+                <p class="text-xs text-orange-500 font-semibold">({{ product.discount }}% OFF)</p>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    @if (filteredAndSortedProducts().length === 0) {
+      <div class="text-center py-20">
+        <h3 class="text-xl font-bold">No products found</h3>
+        <p class="text-gray-500">Try adjusting your filters or search term.</p>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Sticky Footer for Mobile -->
+<div class="sticky bottom-0 w-full bg-white border-t flex z-10 lg:hidden">
+  <select (change)="onSortChange($event)" class="w-1/2 py-4 text-center font-bold border-r">
+    <option value="recommended">SORT</option>
+    <option value="price_asc">Price: Low to High</option>
+    <option value="price_desc">Price: High to Low</option>
+    <option value="discount_desc">Better Discount</option>
+  </select>
+  <button (click)="showFilters.set(true)" class="w-1/2 py-4 text-center font-bold">FILTER</button>
+</div>
+
+<!-- Filter Modal for Mobile -->
+@if(showFilters()) {
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" (click)="showFilters.set(false)">
+    <div class="absolute inset-y-0 right-0 w-4/5 bg-white shadow-xl p-4 flex flex-col" (click)="$event.stopPropagation()">
+      <div class="flex justify-between items-center border-b pb-4">
+        <h3 class="text-lg font-bold">FILTERS</h3>
+        <button (click)="showFilters.set(false)">
+           <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+      <div class="mt-4 space-y-6 overflow-y-auto flex-grow">
+        <!-- Price -->
+        <div>
+          <h4 class="font-semibold mb-2">PRICE</h4>
+          @for(range of priceRanges; track range.value) {
+            <div class="flex items-center">
+              <input type="checkbox" [id]="'price-mob-'+range.value" [value]="range.value" (change)="toggleFilter('priceRanges', range.value)" [checked]="localFilters().priceRanges.includes(range.value)" class="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+              <label [for]="'price-mob-'+range.value" class="ml-3 min-w-0 flex-1 text-gray-500">{{ range.label }}</label>
+            </div>
+          }
+        </div>
+        <!-- Discount -->
+        <div>
+          <h4 class="font-semibold mb-2">DISCOUNT RANGE</h4>
+          @for(discount of discounts; track discount) {
+            <div class="flex items-center">
+              <input type="checkbox" [id]="'discount-mob-'+discount" [value]="discount" (change)="toggleFilter('discounts', discount)" [checked]="localFilters().discounts.includes(discount)" class="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500">
+              <label [for]="'discount-mob-'+discount" class="ml-3 min-w-0 flex-1 text-gray-500">{{ discount }}% and above</label>
+            </div>
+          }
+        </div>
+      </div>
+      <div class="sticky bottom-0 bg-white py-4 border-t flex space-x-2">
+        <button (click)="clearFilters()" class="w-1/2 py-3 border border-gray-300 rounded font-bold">CLEAR</button>
+        <button (click)="applyFilters()" class="w-1/2 py-3 bg-pink-500 text-white rounded font-bold">APPLY</button>
+      </div>
+    </div>
+  </div>
+}

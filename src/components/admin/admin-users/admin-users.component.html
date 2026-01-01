@@ -1,0 +1,35 @@
+
+<div>
+  <h1 class="text-3xl font-bold mb-6">Manage Users</h1>
+  
+  <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    <table class="min-w-full leading-normal">
+      <thead>
+        <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+          <th class="py-3 px-5 text-left">User ID</th>
+          <th class="py-3 px-5 text-left">Name</th>
+          <th class="py-3 px-5 text-left">Email</th>
+          <th class="py-3 px-5 text-center">Total Orders</th>
+          <th class="py-3 px-5 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        @for(user of users(); track user.id) {
+          <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-5 font-mono text-xs">{{ user.id }}</td>
+            <td class="py-3 px-5">{{ user.name }}</td>
+            <td class="py-3 px-5">{{ user.email }}</td>
+            <td class="py-3 px-5 text-center">{{ getUserOrderCount(user.name) }}</td>
+            <td class="py-3 px-5 text-center">
+              <button (click)="blockUser(user.id)" class="text-red-600 hover:text-red-900">Block</button>
+            </td>
+          </tr>
+        } @empty {
+           <tr>
+            <td colspan="5" class="text-center py-10">No users found.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

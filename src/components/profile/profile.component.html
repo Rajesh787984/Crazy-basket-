@@ -1,0 +1,73 @@
+
+@if(currentUser(); as user) {
+<div class="bg-gray-100 min-h-full">
+  <div class="p-4">
+    <div class="flex items-center space-x-4">
+      <img src="https://picsum.photos/id/237/80/80" alt="Profile" class="h-20 w-20 rounded-full">
+      <div>
+        <h1 class="text-xl font-bold">{{ user.name }}</h1>
+        <div class="flex items-center space-x-2">
+           <p class="text-gray-500">{{ user.email }}</p>
+           @if (user.isVerified) {
+             <span class="text-xs bg-green-100 text-green-800 font-semibold px-2 py-0.5 rounded-full">Verified</span>
+           } @else {
+             <span class="text-xs bg-yellow-100 text-yellow-800 font-semibold px-2 py-0.5 rounded-full">Not Verified</span>
+           }
+        </div>
+      </div>
+    </div>
+     <button (click)="stateService.navigateTo('profile-edit')" class="w-full mt-4 text-center py-2 font-bold text-gray-700 border bg-white rounded-lg">
+      Edit Profile
+    </button>
+  </div>
+
+  @if (stateService.isAdmin()) {
+    <div class="bg-white m-4 rounded-lg shadow">
+      <a (click)="stateService.navigateTo('admin')" class="flex justify-between items-center p-4 cursor-pointer text-pink-600 font-bold">
+        <span>ADMIN PANEL</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      </a>
+    </div>
+  }
+
+  <div class="bg-white m-4 rounded-lg shadow">
+    <a (click)="stateService.navigateTo('orders')" class="flex justify-between items-center p-4 border-b cursor-pointer">
+      <span class="font-semibold">Orders</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+     <a (click)="stateService.navigateTo('myntra-insider')" class="flex justify-between items-center p-4 border-b cursor-pointer">
+      <span class="font-semibold">Crazy Basket Insider</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+    <a (click)="stateService.navigateTo('address')" class="flex justify-between items-center p-4 cursor-pointer">
+      <span class="font-semibold">Addresses</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+  </div>
+  
+   <div class="bg-white m-4 rounded-lg shadow">
+     <a (click)="stateService.navigateTo('language-settings')" class="flex justify-between items-center p-4 border-b cursor-pointer">
+      <span class="font-semibold">Language Settings</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+    <a (click)="stateService.navigateTo('privacy-policy')" class="flex justify-between items-center p-4 border-b cursor-pointer">
+      <span class="font-semibold">Privacy Policy</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+    <a (click)="stateService.navigateTo('contact-us')" class="flex justify-between items-center p-4 border-b cursor-pointer">
+      <span class="font-semibold">Contact Us</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+    <a (click)="stateService.navigateTo('faq')" class="flex justify-between items-center p-4 cursor-pointer">
+      <span class="font-semibold">FAQs</span>
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    </a>
+  </div>
+
+  <div class="p-4">
+    <button (click)="logout()" class="w-full text-center py-3 font-bold text-pink-500 border-2 border-pink-200 bg-pink-50 rounded-lg">
+      LOG OUT
+    </button>
+  </div>
+</div>
+}

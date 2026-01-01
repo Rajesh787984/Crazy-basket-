@@ -1,0 +1,36 @@
+
+<div class="flex items-center justify-center min-h-full p-4 bg-gray-100">
+  <div class="w-full max-w-md">
+    <img src="https://picsum.photos/id/1074/800/200" alt="Login Banner" class="w-full h-auto rounded-t-lg">
+    <div class="bg-white p-8 rounded-b-lg shadow-lg">
+      <h2 class="text-2xl font-bold mb-2">Login or Signup</h2>
+      
+      @if (loginStep() === 'mobile') {
+        <p class="text-gray-500 mb-6">Enter your mobile number to continue</p>
+        <form [formGroup]="mobileForm" (ngSubmit)="requestOtp()">
+          <div class="mb-4">
+            <input formControlName="mobile" type="tel" placeholder="Mobile Number" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400">
+          </div>
+          <p class="text-xs text-gray-500 mb-4">By continuing, I agree to the <span class="font-bold text-pink-500">Terms of Use</span> & <span class="font-bold text-pink-500">Privacy Policy</span></p>
+          <button type="submit" [disabled]="mobileForm.invalid" class="w-full bg-pink-500 text-white font-bold py-3 rounded-md hover:bg-pink-600 transition-colors disabled:bg-gray-400">
+            CONTINUE
+          </button>
+        </form>
+      }
+
+      @if (loginStep() === 'otp') {
+         <p class="text-gray-500 mb-6">Enter the OTP sent to {{ mobileForm.value.mobile }}</p>
+        <form [formGroup]="otpForm" (ngSubmit)="verifyOtp()">
+          <div class="mb-4">
+            <input formControlName="otp" type="tel" placeholder="Enter 6-digit OTP" class="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-400" autocomplete="one-time-code">
+          </div>
+          <button type="submit" [disabled]="otpForm.invalid" class="w-full bg-pink-500 text-white font-bold py-3 rounded-md hover:bg-pink-600 transition-colors disabled:bg-gray-400">
+            VERIFY OTP
+          </button>
+        </form>
+        <button (click)="loginStep.set('mobile')" class="text-sm text-gray-600 mt-4 text-center w-full hover:text-pink-500">Change Mobile Number</button>
+      }
+       <p class="text-sm text-gray-600 mt-6">Don't have an account? <a (click)="stateService.navigateTo('signup')" class="font-bold text-pink-500 cursor-pointer">Sign Up Here</a></p>
+    </div>
+  </div>
+</div>

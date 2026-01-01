@@ -1,0 +1,5 @@
+{
+  "name": "Crazy Basket",
+  "description": "A modern e-commerce web application for Crazy Basket, showcasing a product catalog, product details, and a shopping cart. Built with Angular and styled with Tailwind CSS.",
+  "requestFramePermissions": []
+}

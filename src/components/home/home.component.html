@@ -1,0 +1,80 @@
+
+<div class="bg-gray-50">
+  <!-- Shop by Category -->
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">SHOP BY CATEGORY</h2>
+    <div class="flex space-x-4 overflow-x-auto pb-2 -mx-4 px-4">
+      @for(category of homeCategories(); track category.name) {
+        <div (click)="selectCategory(category.name)" class="flex-shrink-0 w-20 text-center cursor-pointer group">
+          <div class="w-20 h-20 rounded-full overflow-hidden shadow-md group-hover:shadow-lg transition-shadow transform group-hover:scale-105 duration-300" [class]="category.bgColor">
+            <img [src]="category.img" [alt]="category.name" class="w-full h-full object-cover">
+          </div>
+          <p class="mt-2 font-semibold text-sm text-gray-700">{{ category.name }}</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Hero Slider -->
+  <div class="relative w-full h-48 md:h-64 lg:h-80 overflow-hidden">
+    @for(slide of heroSlides(); track slide.img; let i = $index) {
+      <div class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
+           [class.opacity-100]="activeSlide() === i"
+           [class.opacity-0]="activeSlide() !== i">
+        <img [src]="slide.img" class="w-full h-full object-cover" [alt]="slide.title">
+        <div class="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white p-4 text-center">
+          <h2 class="text-3xl md:text-5xl font-extrabold text-shadow">{{ slide.title }}</h2>
+          <p class="mt-2 text-lg md:text-2xl font-semibold text-shadow">{{ slide.subtitle }}</p>
+        </div>
+      </div>
+    }
+    <!-- Navigation Dots -->
+    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-10">
+      @for(slide of heroSlides(); track $index; let i = $index) {
+        <button (click)="goToSlide(i)" class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                [class.bg-white]="activeSlide() === i"
+                [class.w-4]="activeSlide() === i"
+                [class.bg-white/50]="activeSlide() !== i"></button>
+      }
+    </div>
+  </div>
+
+  <!-- Top Deals -->
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">TOP DEALS</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for(deal of topDeals; track deal.title) {
+        <div (click)="selectCategory(deal.category === 'Men' ? 'Men' : 'Women')" class="cursor-pointer group">
+          <img [src]="deal.img" [alt]="deal.title" class="w-full h-auto rounded-lg shadow-md group-hover:shadow-xl transition-shadow transform group-hover:scale-105 duration-300">
+          <h3 class="font-bold mt-2 text-gray-700">{{ deal.title }}</h3>
+          <p class="text-sm text-green-600 font-semibold">{{ deal.discount }}</p>
+        </div>
+      }
+    </div>
+  </div>
+  
+  <!-- Trending Products -->
+  <div class="p-4">
+    <h2 class="text-xl font-bold mb-4 text-gray-800">TRENDING FOR YOU</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      @for(product of featuredProducts(); track product.id) {
+        <div (click)="viewProduct(product.id)" class="bg-white rounded-lg overflow-hidden cursor-pointer group border hover:shadow-xl transition-shadow duration-300">
+          <div class="relative">
+            <img [src]="product.images[0]" [alt]="product.name" class="w-full aspect-[3/4] object-cover">
+          </div>
+          <div class="p-2">
+            <h3 class="font-bold truncate text-gray-800">{{ product.brand }}</h3>
+            <p class="text-sm text-gray-600 truncate">{{ product.name }}</p>
+            <div class="flex items-center space-x-2 mt-1">
+              <p class="font-bold text-gray-900">₹{{ product.price }}</p>
+              @if(product.discount > 0) {
+                <p class="text-xs text-gray-500 line-through">₹{{ product.originalPrice }}</p>
+                <p class="text-xs text-orange-500 font-semibold">({{ product.discount }}% OFF)</p>
+              }
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</div>

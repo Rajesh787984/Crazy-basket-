@@ -1,0 +1,96 @@
+
+<div class="lg:flex">
+  <app-sidebar [isOpen]="isSidebarOpen()"></app-sidebar>
+  
+  <div class="relative min-h-screen w-full bg-white shadow-lg flex-grow flex flex-col transition-transform duration-300 lg:transform-none min-w-0" 
+       [class.translate-x-64]="isSidebarOpen()"
+       [class.scale-95]="isSidebarOpen()"
+       [class.rounded-lg]="isSidebarOpen()"
+       [class.overflow-hidden]="isSidebarOpen()">
+       
+    <app-header></app-header>
+    
+    <main class="flex-grow overflow-y-auto pb-16 lg:pb-0">
+      @switch (currentView()) {
+        @case ('home') {
+          <app-home></app-home>
+        }
+        @case ('productList') {
+          <app-product-list></app-product-list>
+        }
+        @case ('productDetail') {
+          <app-product-detail></app-product-detail>
+        }
+        @case ('cart') {
+          <app-cart></app-cart>
+        }
+        @case ('profile') {
+          <app-profile></app-profile>
+        }
+        @case ('profile-edit') {
+          <app-profile-edit></app-profile-edit>
+        }
+        @case ('language-settings') {
+          <app-language-settings></app-language-settings>
+        }
+        @case ('privacy-policy') {
+          <app-privacy-policy></app-privacy-policy>
+        }
+        @case ('contact-us') {
+          <app-contact-us></app-contact-us>
+        }
+        @case ('faq') {
+          <app-faq></app-faq>
+        }
+        @case ('login') {
+          <app-login></app-login>
+        }
+        @case ('signup') {
+          <app-signup></app-signup>
+        }
+        @case ('address') {
+          <app-address></app-address>
+        }
+        @case ('address-form') {
+          <app-address-form></app-address-form>
+        }
+        @case ('payment') {
+          <app-payment></app-payment>
+        }
+         @case ('manual-payment') {
+          <app-manual-payment></app-manual-payment>
+        }
+        @case ('orderConfirmation') {
+          <app-order-confirmation></app-order-confirmation>
+        }
+         @case ('orders') {
+          <app-order-history></app-order-history>
+        }
+        @case ('myntra-insider') {
+          <app-myntra-insider></app-myntra-insider>
+        }
+        @case ('admin') {
+          <app-admin></app-admin>
+        }
+        @case ('outfitRecommender') {
+          <app-outfit-recommender></app-outfit-recommender>
+        }
+      }
+    </main>
+
+    @if (currentView() !== 'admin') {
+      <div class="lg:hidden">
+        @if (currentView() !== 'productDetail' && currentView() !== 'address' && currentView() !== 'payment' && currentView() !== 'orderConfirmation' && currentView() !== 'address-form' && currentView() !== 'profile-edit' && currentView() !== 'language-settings' && currentView() !== 'privacy-policy' && currentView() !== 'contact-us' && currentView() !== 'faq' && currentView() !== 'manual-payment') {
+          <app-bottom-nav></app-bottom-nav>
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Global Toast Notification -->
+@if(toastMessage(); as message) {
+    <div class="fixed bottom-20 lg:bottom-5 right-5 bg-white text-gray-800 border border-gray-200 px-4 py-2 rounded-md shadow-lg text-sm z-50">
+      {{ message }}
+    </div>
+}

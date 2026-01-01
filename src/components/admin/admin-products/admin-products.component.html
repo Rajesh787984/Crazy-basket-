@@ -1,0 +1,46 @@
+
+<div>
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Manage Products</h1>
+    <button (click)="addProduct()" class="bg-pink-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-pink-700">
+      Add New Product
+    </button>
+  </div>
+
+  <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    <table class="min-w-full leading-normal">
+      <thead>
+        <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+          <th class="py-3 px-5 text-left">Product</th>
+          <th class="py-3 px-5 text-left">Brand</th>
+          <th class="py-3 px-5 text-left">Price</th>
+          <th class="py-3 px-5 text-left">Stock</th>
+          <th class="py-3 px-5 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        @for(product of products(); track product.id) {
+          <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-5">
+              <div class="flex items-center">
+                <img [src]="product.images[0]" alt="" class="w-16 h-20 object-cover rounded-md mr-4">
+                <span class="font-semibold">{{ product.name }}</span>
+              </div>
+            </td>
+            <td class="py-3 px-5">{{ product.brand }}</td>
+            <td class="py-3 px-5">₹{{ product.price }}</td>
+            <td class="py-3 px-5">{{ getInStockCount(product) }} / {{ product.sizes.length }} sizes in stock</td>
+            <td class="py-3 px-5 text-center">
+              <button (click)="editProduct(product)" class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+              <button (click)="deleteProduct(product.id)" class="text-red-600 hover:text-red-900">Delete</button>
+            </td>
+          </tr>
+        } @empty {
+           <tr>
+            <td colspan="5" class="text-center py-10">No products found.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

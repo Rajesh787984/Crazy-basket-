@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Crazy Basket</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar for better aesthetics */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #f43f5e; /* rose-500 */
+      border-radius: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fce7f3; /* rose-100 */
+    }
+    /* Utility class for text shadow on banners */
+    .text-shadow {
+        text-shadow: 1px 1px 3px rgb(0 0 0 / 50%);
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://esm.sh/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://esm.sh/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://esm.sh/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://esm.sh/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://esm.sh/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://esm.sh/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@angular/compiler": "https://esm.sh/@angular/compiler@^21.0.6?external=rxjs",
+    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@^21.0.6?external=rxjs",
+    "@angular/common/http": "https://esm.sh/@angular/common@^21.0.6/http?external=rxjs",
+    "@angular/core": "https://esm.sh/@angular/core@^21.0.6?external=rxjs",
+    "@angular/common": "https://esm.sh/@angular/common@^21.0.6?external=rxjs",
+    "@angular/forms": "https://esm.sh/@angular/forms@^21.0.6?external=rxjs",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0?external=rxjs",
+    "firebase/app": "https://esm.sh/firebase@^10.12.3/app",
+    "firebase/auth": "https://esm.sh/firebase@^10.12.3/auth",
+    "firebase/firestore": "https://esm.sh/firebase@^10.12.3/firestore",
+    "firebase/storage": "https://esm.sh/firebase@^10.12.3/storage",
+    "@angular/fire": "https://esm.sh/@angular/fire@^17.1.0",
+    "@angular/fire/app": "https://esm.sh/@angular/fire@^17.1.0/app",
+    "@angular/fire/auth": "https://esm.sh/@angular/fire@^17.1.0/auth",
+    "@angular/fire/firestore": "https://esm.sh/@angular/fire@^17.1.0/firestore",
+    "@angular/fire/storage": "https://esm.sh/@angular/fire@^17.1.0/storage"
+  }
+}
+</script>
+</head>
+<body class="bg-gray-50 antialiased font-sans text-gray-800">
+  <app-root></app-root>
+</body>
+</html>

@@ -1,0 +1,75 @@
+
+<div>
+  <h1 class="text-3xl font-bold mb-6">Settings & Content</h1>
+
+  <!-- Contact Info Form -->
+  <div class="bg-white p-6 rounded-lg shadow mb-8">
+    <h2 class="text-xl font-bold mb-4">Contact & UPI Information</h2>
+    <form [formGroup]="contactForm" (ngSubmit)="saveContactInfo()" class="space-y-4">
+      <input formControlName="address" type="text" placeholder="Address" class="w-full px-4 py-2 border rounded-md">
+      <input formControlName="email" type="email" placeholder="Email" class="w-full px-4 py-2 border rounded-md">
+      <input formControlName="phone" type="text" placeholder="Phone Number" class="w-full px-4 py-2 border rounded-md">
+      <input formControlName="upiId" type="text" placeholder="UPI ID (e.g. yourname@oksbi)" class="w-full px-4 py-2 border rounded-md">
+      <input formControlName="qrCodeImage" type="text" placeholder="QR Code Image URL" class="w-full px-4 py-2 border rounded-md">
+      <div class="text-right">
+        <button type="submit" [disabled]="contactForm.invalid" class="bg-pink-600 text-white font-bold py-2 px-6 rounded-lg">
+          Save Contact Info
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- FAQ Management -->
+  <div>
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Manage FAQs</h1>
+      <button (click)="newFaq()" class="bg-pink-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-pink-700">
+        Add New FAQ
+      </button>
+    </div>
+
+    <!-- Add/Edit FAQ Form -->
+    @if(showFaqForm()) {
+      <div class="bg-white p-6 rounded-lg shadow mb-8">
+        <h2 class="text-xl font-bold mb-4">{{ editingFaq() ? 'Edit' : 'Add' }} FAQ</h2>
+        <form [formGroup]="faqForm" (ngSubmit)="saveFaq()" class="space-y-4">
+          <input formControlName="question" type="text" placeholder="Question" class="w-full px-4 py-2 border rounded-md">
+          <textarea formControlName="answer" placeholder="Answer" rows="4" class="w-full px-4 py-2 border rounded-md"></textarea>
+          <div class="flex justify-end space-x-4">
+              <button type="button" (click)="cancelFaqEdit()" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg">Cancel</button>
+              <button type="submit" [disabled]="faqForm.invalid" class="bg-pink-600 text-white font-bold py-2 px-6 rounded-lg">Save FAQ</button>
+          </div>
+        </form>
+      </div>
+    }
+
+    <!-- FAQ List -->
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+      <table class="min-w-full leading-normal">
+        <thead>
+          <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+            <th class="py-3 px-5 text-left">Question</th>
+            <th class="py-3 px-5 text-left">Answer</th>
+            <th class="py-3 px-5 text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-700">
+          @for(faq of faqs(); track faq.id) {
+            <tr class="border-b border-gray-200 hover:bg-gray-100">
+              <td class="py-3 px-5 font-semibold">{{ faq.question }}</td>
+              <td class="py-3 px-5 text-sm max-w-md">{{ faq.answer }}</td>
+              <td class="py-3 px-5 text-center">
+                <button (click)="editFaq(faq)" class="text-indigo-600 hover:text-indigo-900 mr-4">Edit</button>
+                <button (click)="deleteFaq(faq.id)" class="text-red-600 hover:text-red-900">Delete</button>
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="text-center py-10">No FAQs found. Add one to get started!</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

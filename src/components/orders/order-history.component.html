@@ -1,0 +1,53 @@
+
+<div class="p-4 bg-gray-100 min-h-full">
+  <h1 class="text-xl font-bold mb-4">My Orders ({{orders().length}})</h1>
+
+  @if(orders().length > 0) {
+    <div class="space-y-4">
+      @for(order of orders(); track order.id) {
+        <div class="bg-white rounded-lg shadow p-4">
+          <div class="border-b pb-2 mb-2">
+            <h2 class="font-bold">Order #{{order.id}}</h2>
+            <p class="text-sm text-gray-500">Placed on: {{ order.date | date: 'longDate' }}</p>
+          </div>
+          <div>
+            @for(item of order.items; track item.product.id) {
+              <div class="flex items-center space-x-4 py-2">
+                <img [src]="item.product.images[0]" [alt]="item.product.name" class="w-16 h-20 object-cover rounded-md">
+                <div class="flex-grow">
+                  <p class="font-semibold">{{ item.product.brand }}</p>
+                  <p class="text-sm text-gray-600">{{ item.product.name }}</p>
+                  <p class="text-xs text-gray-500">Qty: {{item.quantity}} | Size: {{item.size}}</p>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="flex justify-between items-center mt-2 pt-2 border-t">
+            <span class="text-sm">Total: <span class="font-bold">₹{{ order.totalAmount }}</span></span>
+            <span class="text-xs font-semibold px-2 py-1 rounded-full"
+                  [class.bg-green-100]="order.status === 'Delivered'"
+                  [class.text-green-800]="order.status === 'Delivered'"
+                  [class.bg-blue-100]="order.status === 'Shipped'"
+                  [class.text-blue-800]="order.status === 'Shipped'"
+                  [class.bg-yellow-100]="order.status === 'Confirmed'"
+                  [class.text-yellow-800]="order.status === 'Confirmed'"
+                  [class.bg-gray-200]="order.status === 'Pending Verification'"
+                  [class.text-gray-800]="order.status === 'Pending Verification'"
+                  [class.bg-red-100]="order.status === 'Cancelled'"
+                  [class.text-red-800]="order.status === 'Cancelled'">
+              ● {{ order.status }}
+            </span>
+          </div>
+        </div>
+      }
+    </div>
+  } @else {
+    <div class="text-center py-20">
+      <h2 class="text-xl font-bold">No orders yet!</h2>
+      <p class="text-gray-500 mt-1">Looks like you haven't made any purchases.</p>
+      <button (click)="stateService.navigateTo('home')" class="mt-6 px-6 py-2 bg-pink-500 text-white font-bold rounded-md">
+        START SHOPPING
+      </button>
+    </div>
+  }
+</div>

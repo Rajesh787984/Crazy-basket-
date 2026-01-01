@@ -1,0 +1,44 @@
+
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { StateService } from '../../services/state.service';
+import { Product } from '../../models/product.model';
+import { FormsModule } from '@angular/forms';
+
+@Component({
+  selector: 'app-cart',
+  templateUrl: './cart.component.html',
+  imports: [CommonModule, FormsModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class CartComponent {
+  stateService = inject(StateService);
+  cartItems = this.stateService.cartItems;
+  cartMRP = this.stateService.cartMRP;
+  cartDiscount = this.stateService.cartDiscount;
+  cartTotal = this.stateService.cartTotal;
+  couponDiscount = this.stateService.couponDiscount;
+  
+  couponCode = signal('');
+
+  removeItem(productId: string, size: string) {
+    this.stateService.removeFromCart(productId, size);
+  }
+
+  updateQuantity(productId: string, size: string, newQuantity: number) {
+    this.stateService.updateCartItemQuantity(productId, size, newQuantity);
+  }
+
+  applyCoupon() {
+    this.stateService.applyCoupon(this.couponCode());
+  }
+
+  placeOrder() {
+    // This will now trigger the protected route guard in the state service
+    this.stateService.navigateTo('address');
+  }
+
+  continueShopping() {
+    this.stateService.navigateTo('home');
+  }
+}

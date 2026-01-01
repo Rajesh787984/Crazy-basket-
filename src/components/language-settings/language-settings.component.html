@@ -1,0 +1,13 @@
+
+<div class="p-4 bg-gray-100 min-h-full">
+  <h1 class="text-xl font-bold mb-4">Language Settings</h1>
+  
+  <div class="bg-white rounded-lg shadow">
+    @for(lang of languages; track lang.code) {
+      <div (click)="selectLanguage(lang.name)" class="flex justify-between items-center p-4 border-b cursor-pointer hover:bg-gray-50">
+        <span class="font-semibold">{{ lang.name }}</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      </div>
+    }
+  </div>
+</div>

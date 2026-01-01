@@ -1,0 +1,43 @@
+
+<div>
+  <h1 class="text-3xl font-bold mb-6">Manage Orders</h1>
+  
+  <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    <table class="min-w-full leading-normal">
+      <thead>
+        <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+          <th class="py-3 px-5 text-left">Order ID</th>
+          <th class="py-3 px-5 text-left">Date</th>
+          <th class="py-3 px-5 text-left">Customer</th>
+          <th class="py-3 px-5 text-left">Total</th>
+          <th class="py-3 px-5 text-center">Status</th>
+          <th class="py-3 px-5 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        @for(order of orders(); track order.id) {
+          <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-5 font-mono text-xs">{{ order.id }}</td>
+            <td class="py-3 px-5">{{ order.date | date: 'short' }}</td>
+            <td class="py-3 px-5">{{ order.shippingAddress.name }}</td>
+            <td class="py-3 px-5 font-semibold">₹{{ order.totalAmount | number }}</td>
+            <td class="py-3 px-5 text-center">
+              <select [value]="order.status" (change)="updateStatus(order.id, $event)" class="border rounded-md p-1 bg-white">
+                @for(status of orderStatuses; track status) {
+                  <option [value]="status">{{ status }}</option>
+                }
+              </select>
+            </td>
+            <td class="py-3 px-5 text-center">
+              <button (click)="printInvoice(order.id)" class="text-indigo-600 hover:text-indigo-900">Invoice</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="text-center py-10">No orders found.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

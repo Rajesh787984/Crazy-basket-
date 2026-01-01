@@ -1,0 +1,29 @@
+
+<div class="p-4 bg-gray-100 min-h-full">
+  <h1 class="text-xl font-bold mb-4">Edit Profile</h1>
+  
+  @if(currentUser(); as user) {
+    <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="bg-white p-6 rounded-lg space-y-4">
+      <div>
+        <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+        <input id="name" formControlName="name" type="text" class="mt-1 w-full px-4 py-2 border rounded-md">
+      </div>
+      <div>
+        <label for="mobile" class="block text-sm font-medium text-gray-700">Mobile Number</label>
+        <input id="mobile" formControlName="mobile" type="tel" class="mt-1 w-full px-4 py-2 border rounded-md">
+      </div>
+       <div>
+        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+        <input id="email" [value]="user.email" disabled type="email" class="mt-1 w-full px-4 py-2 border rounded-md bg-gray-100 text-gray-500">
+      </div>
+       <div class="flex justify-end space-x-4 pt-4">
+        <button type="button" (click)="cancel()" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300">
+          Cancel
+        </button>
+        <button type="submit" [disabled]="profileForm.invalid" class="bg-pink-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-pink-600 disabled:bg-gray-300">
+          Save Changes
+        </button>
+      </div>
+    </form>
+  }
+</div>

@@ -1,0 +1,56 @@
+
+<div class="flex h-full bg-gray-100 text-gray-800">
+  <!-- Sidebar -->
+  <aside class="w-64 flex-shrink-0 bg-gray-800 text-gray-200 flex flex-col">
+    <div class="h-16 flex items-center justify-center text-white text-lg font-bold border-b border-gray-700">
+      Crazy Basket Admin
+    </div>
+    <nav class="flex-grow">
+      <ul>
+        @for(item of navItems; track item.id) {
+          <li class="px-4 py-3 hover:bg-gray-700 cursor-pointer" 
+              [class.bg-gray-900]="currentAdminView() === item.id"
+              (click)="handleNavClick(item.id)">
+            <a class="flex items-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" [innerHTML]="item.icon"></svg>
+              <span>{{ item.name }}</span>
+            </a>
+          </li>
+        }
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="flex-1 p-6 overflow-y-auto">
+    @switch (currentAdminView()) {
+      @case ('dashboard') {
+        <app-admin-dashboard></app-admin-dashboard>
+      }
+      @case ('products') {
+        <app-admin-products></app-admin-products>
+      }
+       @case ('product-form') {
+        <app-admin-product-form></app-admin-product-form>
+      }
+      @case ('categories') {
+        <app-admin-categories></app-admin-categories>
+      }
+      @case ('orders') {
+        <app-admin-orders></app-admin-orders>
+      }
+       @case ('reviews') {
+        <app-admin-reviews></app-admin-reviews>
+      }
+      @case ('users') {
+        <app-admin-users></app-admin-users>
+      }
+      @case ('banners') {
+        <app-admin-banners></app-admin-banners>
+      }
+      @case ('settings') {
+        <app-admin-settings></app-admin-settings>
+      }
+    }
+  </main>
+</div>

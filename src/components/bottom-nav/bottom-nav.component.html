@@ -1,0 +1,13 @@
+
+<footer class="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-200 shadow-t-lg z-20">
+  <div class="flex justify-around items-center h-16">
+    @for(item of navItems; track item.id) {
+      <button (click)="navigateTo(item.id)" class="flex flex-col items-center justify-center text-gray-500 w-full" [class.text-pink-500]="currentView() === item.id">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" [attr.d]="item.icon" />
+        </svg>
+        <span class="text-xs font-semibold mt-1">{{ item.name }}</span>
+      </button>
+    }
+  </div>
+</footer>

@@ -1,0 +1,37 @@
+
+<div>
+  <h1 class="text-3xl font-bold mb-6">Manage Reviews</h1>
+
+  <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    <table class="min-w-full leading-normal">
+      <thead>
+        <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+          <th class="py-3 px-5 text-left">Product ID</th>
+          <th class="py-3 px-5 text-left">Author</th>
+          <th class="py-3 px-5 text-center">Rating</th>
+          <th class="py-3 px-5 text-left">Comment</th>
+          <th class="py-3 px-5 text-left">Date</th>
+          <th class="py-3 px-5 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        @for(review of reviews(); track review.date) {
+          <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-5 font-mono text-xs">{{ review.productId }}</td>
+            <td class="py-3 px-5 font-semibold">{{ review.author }}</td>
+            <td class="py-3 px-5 text-center">{{ review.rating }} ★</td>
+            <td class="py-3 px-5 text-sm max-w-sm">{{ review.comment }}</td>
+            <td class="py-3 px-5 text-sm">{{ review.date | date:'short' }}</td>
+            <td class="py-3 px-5 text-center">
+              <button (click)="deleteReview(review)" class="text-red-600 hover:text-red-900">Delete</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="6" class="text-center py-10">No reviews found.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
