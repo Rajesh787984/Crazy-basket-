@@ -67,12 +67,17 @@ export class OutfitRecommenderComponent {
 
       const rawRecs = await this.geminiService.getOutfitRecommendations(this.occasion(), allProducts, imagePayload);
 
-      const detailedRecs = rawRecs
-        .map(rec => {
-          const product = this.productService.getProductById(rec.productId);
-          return product ? { ...rec, product } : null;
+            const detailedRecs = rawRecs
+        .map((rec: any) => {
+          const product = this.productService.getProductById(rec.id || rec.productId);
+          return product ? { 
+            ...rec, 
+            product, 
+            productId: product.id 
+          } : null;
         })
-        .filter((rec): rec is OutfitRecommendation => rec !== null);
+        .filter((rec: any) => rec !== null);
+      
 
       this.recommendations.set(detailedRecs);
 
