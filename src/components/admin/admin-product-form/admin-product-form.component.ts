@@ -43,11 +43,11 @@ export class AdminProductFormComponent implements OnInit {
     this.productToEdit = this.stateService.productToEdit();
     this.isEditMode = !!this.productToEdit;
     if (this.isEditMode && this.productToEdit) {
-      this.productForm.patchValue({
-        ...this.productToEdit,
-        price: this.productToEdit.price,
-        originalPrice: this.productToEdit.originalPrice
-      });
+         this.productForm.patchValue({
+      ...this.productToEdit,
+      category: this.productToEdit.category as any
+    });
+  
       // Set FormArrays
       this.images.clear();
       this.productToEdit.images.forEach(img => this.images.push(this.fb.control(img, Validators.required)));
