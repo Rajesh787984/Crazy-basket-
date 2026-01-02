@@ -78,18 +78,21 @@ export class AdminProductFormComponent implements OnInit {
     const discount = Math.round(((formValue.originalPrice - formValue.price) / formValue.originalPrice) * 100);
 
     if (this.isEditMode && this.productToEdit) {
-      const updatedProduct: Product = {
-        ...this.productToEdit,
-        ...formValue,
-        discount
-      };
+      const updatedProduct = {
+  ...this.productToEdit,
+  ...formValue,
+  discount,
+  sizes: formValue.sizes as any
+};
       this.productService.updateProduct(updatedProduct);
       this.stateService.showToast('Product updated successfully!');
     } else {
-      const newProduct: Omit<Product, 'id'> = {
+            const newProduct = {
         ...formValue,
-        discount
+        discount,
+        sizes: formValue.sizes as any
       };
+
       this.productService.addProduct(newProduct);
       this.stateService.showToast('Product added successfully!');
     }
