@@ -1,4 +1,5 @@
 
+
 import { Injectable } from '@angular/core';
 import { GoogleGenAI, Type, GenerateContentResponse } from '@google/genai';
 import { Product } from '../models/product.model';

@@ -10,7 +10,7 @@ import { StateService } from '../../services/state.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   currentUser = this.stateService.currentUser;
 
   logout() {

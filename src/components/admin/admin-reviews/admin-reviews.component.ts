@@ -11,7 +11,7 @@ import { Review } from '../../../models/review.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminReviewsComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   reviews = this.stateService.userReviews;
 
   deleteReview(review: Review) {

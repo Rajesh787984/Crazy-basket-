@@ -1,0 +1,47 @@
+
+<div>
+  <h1 class="text-3xl font-bold mb-6">Bulk Price Updater</h1>
+
+  <div class="bg-white p-6 rounded-lg shadow">
+    <h2 class="text-xl font-bold mb-4">Update Product Prices</h2>
+    <p class="text-sm text-gray-600 mb-6">
+      Select a category or brand, then choose how to adjust the prices. The price will be adjusted based on the original price (MRP), but will not exceed it.
+    </p>
+
+    <form [formGroup]="updateForm" (ngSubmit)="applyUpdate()" class="space-y-4">
+      <!-- Row 1: Type and Name -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <select formControlName="type" class="w-full px-4 py-2 border rounded-md bg-white">
+          <option value="category">By Category</option>
+          <option value="brand">By Brand</option>
+        </select>
+        <select formControlName="name" class="w-full px-4 py-2 border rounded-md bg-white">
+          <option value="" disabled>Select a {{ updateForm.value.type }}</option>
+          @for(option of nameOptions(); track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Row 2: Update Method and Value -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+         <select formControlName="direction" class="w-full px-4 py-2 border rounded-md bg-white">
+          <option value="decrease">Decrease Price</option>
+          <option value="increase">Increase Price</option>
+        </select>
+        <select formControlName="updateType" class="w-full px-4 py-2 border rounded-md bg-white">
+          <option value="percent">By Percentage (%)</option>
+          <option value="flat">By Flat Amount (₹)</option>
+        </select>
+        <input formControlName="value" type="number" placeholder="Value" class="w-full px-4 py-2 border rounded-md">
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="text-right pt-4">
+        <button type="submit" [disabled]="updateForm.invalid" class="bg-pink-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-pink-700 disabled:bg-gray-400">
+          Apply Update
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

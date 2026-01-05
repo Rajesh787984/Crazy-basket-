@@ -11,7 +11,7 @@ import { Order, OrderStatus } from '../../../models/order.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminOrdersComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   orders = this.stateService.orders;
   
   orderStatuses: OrderStatus[] = ['Pending Verification', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];

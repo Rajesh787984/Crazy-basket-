@@ -1,7 +1,7 @@
 
-import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { User } from '../../models/user.model';
 
@@ -12,10 +12,11 @@ import { User } from '../../models/user.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProfileEditComponent implements OnInit {
-  stateService = inject(StateService);
-  fb = inject(FormBuilder);
+  stateService: StateService = inject(StateService);
+  fb: FormBuilder = inject(FormBuilder);
   
   currentUser = this.stateService.currentUser;
+  uploadedImage = signal<{ previewUrl: string } | null>(null);
 
   profileForm = this.fb.group({
     name: ['', Validators.required],
@@ -32,9 +33,33 @@ export class ProfileEditComponent implements OnInit {
     }
   }
 
+  handlePhotoUpload(event: Event) {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.uploadedImage.set({
+          previewUrl: reader.result as string
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   saveProfile() {
     if (this.profileForm.valid) {
-      this.stateService.updateUser(this.profileForm.value as { name: string, mobile: string });
+      const formValue = this.profileForm.getRawValue();
+      const payload: { name: string, mobile: string, photoUrl?: string } = {
+        name: formValue.name!,
+        mobile: formValue.mobile!
+      };
+      
+      if (this.uploadedImage()) {
+        payload.photoUrl = this.uploadedImage()!.previewUrl;
+      }
+      
+      this.stateService.updateUser(payload);
     } else {
       this.stateService.showToast('Please fill all fields correctly.');
     }

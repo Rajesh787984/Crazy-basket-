@@ -1,6 +1,5 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
 import { Product } from '../../models/product.model';
 import { FormsModule } from '@angular/forms';
@@ -8,16 +7,17 @@ import { FormsModule } from '@angular/forms';
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.component.html',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CartComponent {
-  stateService = inject(StateService);
-  cartItems = this.stateService.cartItems;
+  stateService: StateService = inject(StateService);
+  cartItems = this.stateService.cartItemsWithPrices;
   cartMRP = this.stateService.cartMRP;
-  cartDiscount = this.stateService.cartDiscount;
+  cartDiscount = this.stateService.cartDiscountOnMRP;
   cartTotal = this.stateService.cartTotal;
   couponDiscount = this.stateService.couponDiscount;
+  shippingCost = this.stateService.shippingCost;
   
   couponCode = signal('');
 

@@ -1,16 +1,15 @@
-
 import { Component, ChangeDetectionStrategy, input, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
 
 @Component({
   selector: 'app-sidebar',
   templateUrl: './sidebar.component.html',
-  imports: [CommonModule],
+  imports: [CommonModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SidebarComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   isOpen = input.required<boolean>();
   currentUser = this.stateService.currentUser;
   

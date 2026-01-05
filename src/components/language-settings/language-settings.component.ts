@@ -10,7 +10,7 @@ import { StateService } from '../../services/state.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LanguageSettingsComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
 
   languages = [
     { code: 'en', name: 'English' },

@@ -1,7 +1,7 @@
 
 import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { Address } from '../../models/address.model';
 
@@ -12,8 +12,9 @@ import { Address } from '../../models/address.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddressFormComponent implements OnInit {
-  stateService = inject(StateService);
-  fb = inject(FormBuilder);
+  stateService: StateService = inject(StateService);
+  // FIX: Explicitly type injected FormBuilder to resolve type inference issue.
+  fb: FormBuilder = inject(FormBuilder);
   
   addressToEdit: Address | null = null;
   isEditMode = false;

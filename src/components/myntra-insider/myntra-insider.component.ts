@@ -1,15 +1,10 @@
-
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { StateService } from '../../services/state.service';
 
 @Component({
   selector: 'app-myntra-insider',
-  templateUrl: './myntra-insider.component.html',
+  template: '<p class="p-4">Myntra Insider content goes here.</p>',
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MyntraInsiderComponent {
-  stateService = inject(StateService);
-  currentUser = this.stateService.currentUser;
-}
+export class MyntraInsiderComponent {}

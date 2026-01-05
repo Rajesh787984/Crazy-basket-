@@ -1,19 +1,23 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, OnDestroy } from '@angular/core';
-import { StateService } from '../../services/state.service';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { StateService, HeroSlide } from '../../services/state.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
+import { RecentlyViewedComponent } from '../recently-viewed/recently-viewed.component';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
+  imports: [CommonModule, RecentlyViewedComponent, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, OnDestroy {
-  stateService = inject(StateService);
-  productService = inject(ProductService);
+  stateService: StateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
 
+  homePageSections = this.stateService.homePageSections;
   heroSlides = this.stateService.heroSlides;
+  smallBanner = this.stateService.smallBanner;
   homeCategories = this.stateService.categories;
 
   topDeals = [
@@ -56,6 +60,12 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.activeSlide.set(index);
     this.stopSlider();
     this.startSlider();
+  }
+
+  onBannerClick(slide: HeroSlide) {
+    if (slide.productId) {
+      this.stateService.navigateTo('productDetail', { productId: slide.productId });
+    }
   }
 
   loadFeaturedProducts() {

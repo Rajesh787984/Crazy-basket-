@@ -2,7 +2,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Faq } from '../../../models/faq.model';
 
 @Component({
@@ -12,8 +12,9 @@ import { Faq } from '../../../models/faq.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminSettingsComponent implements OnInit {
-  stateService = inject(StateService);
-  fb = inject(FormBuilder);
+  stateService: StateService = inject(StateService);
+  // FIX: Explicitly type injected FormBuilder to resolve type inference issue.
+  fb: FormBuilder = inject(FormBuilder);
 
   faqs = this.stateService.faqs;
   contactInfo = this.stateService.contactInfo;

@@ -1,28 +1,116 @@
 
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { StateService } from '../../../services/state.service';
 import { User } from '../../../models/user.model';
+import { ProductService } from '../../../services/product.service';
 
 @Component({
   selector: 'app-admin-users',
   templateUrl: './admin-users.component.html',
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminUsersComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
 
-  // This is a private signal in the service, so we access it this way for the component.
-  // In a real app with a backend, we'd have a UserService.
-  users = computed(() => (this.stateService as any).users());
+  users = this.stateService.users;
   orders = this.stateService.orders;
+  
+  modalView = signal<'wallet' | 'views' | null>(null);
+  selectedUser = signal<User | null>(null);
+  
+  // For wallet modal
+  walletAmount = signal(100);
+  walletAction = signal<'add' | 'subtract'>('add');
 
-  getUserOrderCount(userName: string): number {
-    return this.orders().filter(order => order.shippingAddress.name === userName).length;
+  userProductViews = computed(() => {
+    const user = this.selectedUser();
+    if (!user) return [];
+    const userViews = this.stateService.productViewCounts().get(user.id);
+    if (!userViews) return [];
+
+    return Array.from(userViews.entries())
+      .map(([productId, count]) => ({
+        product: this.productService.getProductById(productId),
+        count
+      }))
+      .filter(item => item.product)
+      .sort((a, b) => b.count - a.count);
+  });
+  
+  referralCounts = computed(() => {
+    const counts = new Map<string, number>();
+    this.users().forEach(u => {
+      if (u.referredBy) {
+        counts.set(u.referredBy, (counts.get(u.referredBy) || 0) + 1);
+      }
+    });
+    return counts;
+  });
+
+  getReferrerName(user: User): string {
+    if (!user.referredBy) return 'N/A';
+    const referrer = this.users().find(u => u.id === user.referredBy);
+    return referrer ? referrer.name : 'Unknown';
+  }
+
+  getReferralCount(userId: string): number {
+    return this.referralCounts().get(userId) || 0;
+  }
+
+  getUserOrderCount(userId: string): number {
+    return this.orders().filter(order => order.shippingAddress.name === this.users().find(u => u.id === userId)?.name).length;
   }
   
-  blockUser(userId: string) {
-    this.stateService.showToast(`User ${userId} blocked (feature demo).`);
+  toggleBlacklist(userId: string) {
+    this.stateService.toggleBlacklist(userId);
+  }
+
+  updateUserType(userId: string, event: Event) {
+    const type = (event.target as HTMLSelectElement).value as 'B2C' | 'B2B';
+    this.stateService.updateUserType(userId, type);
+  }
+  
+  impersonate(userId: string) {
+    if(confirm('Are you sure you want to log in as this user? You will be redirected from the admin panel.')) {
+      this.stateService.impersonateUser(userId);
+    }
+  }
+
+  // Modal controls
+  openWalletModal(user: User) {
+    this.selectedUser.set(user);
+    this.modalView.set('wallet');
+    this.walletAmount.set(100);
+    this.walletAction.set('add');
+  }
+
+  openViewsModal(user: User) {
+    this.selectedUser.set(user);
+    this.modalView.set('views');
+  }
+
+  closeModal() {
+    this.selectedUser.set(null);
+    this.modalView.set(null);
+  }
+
+  updateWallet() {
+    const user = this.selectedUser();
+    const amount = this.walletAmount();
+    if (user && amount > 0) {
+      this.stateService.updateUserWallet(user.id, amount, this.walletAction());
+      // we must re-fetch the user to get the updated balance for the view
+      this.selectedUser.set(this.stateService.users().find(u => u.id === user.id) || null);
+    }
+  }
+
+  getUserTier(points: number): 'Bronze' | 'Silver' | 'Gold' {
+    if (points >= 2500) return 'Gold';
+    if (points >= 1000) return 'Silver';
+    return 'Bronze';
   }
 }

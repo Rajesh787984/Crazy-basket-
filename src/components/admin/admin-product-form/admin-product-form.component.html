@@ -1,4 +1,5 @@
 
+
 <div>
   <h1 class="text-3xl font-bold mb-6">{{ isEditMode ? 'Edit Product' : 'Add New Product' }}</h1>
   
@@ -11,17 +12,18 @@
 
     <!-- Pricing & Rating -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <input formControlName="price" type="number" placeholder="Selling Price" class="w-full px-4 py-2 border rounded-md">
+      <input formControlName="price" type="number" placeholder="Selling Price (B2C)" class="w-full px-4 py-2 border rounded-md">
       <input formControlName="originalPrice" type="number" placeholder="Original Price (MRP)" class="w-full px-4 py-2 border rounded-md">
-      <select formControlName="category" class="w-full px-4 py-2 border rounded-md bg-white">
-        <option value="Men">Men</option>
-        <option value="Women">Women</option>
-        <option value="Kids">Kids</option>
-      </select>
+      <input formControlName="b2bPrice" type="number" placeholder="B2B Price (Optional)" class="w-full px-4 py-2 border rounded-md">
     </div>
      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <input formControlName="rating" type="number" step="0.1" placeholder="Rating (e.g., 4.5)" class="w-full px-4 py-2 border rounded-md">
         <input formControlName="reviews" type="number" placeholder="Reviews Count (e.g., 1200)" class="w-full px-4 py-2 border rounded-md">
+        <select formControlName="category" class="w-full px-4 py-2 border rounded-md bg-white">
+          <option value="Men">Men</option>
+          <option value="Women">Women</option>
+          <option value="Kids">Kids</option>
+        </select>
     </div>
 
     <!-- Images -->
@@ -62,6 +64,29 @@
         </div>
       }
       <button type="button" (click)="addDetail()" class="text-sm text-pink-600 font-semibold">+ Add Detail</button>
+    </div>
+
+     <!-- Additional settings -->
+    <div>
+        <h3 class="font-semibold mb-2">Additional Settings</h3>
+        <div class="space-y-4">
+             <input formControlName="videoUrl" type="text" placeholder="YouTube Embed URL (optional)" class="w-full px-4 py-2 border rounded-md">
+             <input formControlName="sizeChartUrl" type="text" placeholder="Size Chart Image URL (optional)" class="w-full px-4 py-2 border rounded-md">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <label class="flex items-center">
+                  <input formControlName="isCodAvailable" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-pink-600">
+                  <span class="ml-2">Cash on Delivery</span>
+              </label>
+               <label class="flex items-center">
+                  <input formControlName="allowPhotoUpload" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-pink-600">
+                  <span class="ml-2">Allow Photo Upload</span>
+              </label>
+               <label class="flex items-center">
+                  <input formControlName="preorderAvailable" type="checkbox" class="h-4 w-4 rounded border-gray-300 text-pink-600">
+                  <span class="ml-2">Pre-order Available</span>
+              </label>
+            </div>
+        </div>
     </div>
     
     <!-- Actions -->

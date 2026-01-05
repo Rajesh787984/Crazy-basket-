@@ -1,8 +1,8 @@
 
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { StateService } from '../../../services/state.service';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-manual-payment',
@@ -11,7 +11,7 @@ import { StateService } from '../../../services/state.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ManualPaymentComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   cartTotal = this.stateService.cartTotal;
   contactInfo = this.stateService.contactInfo;
   

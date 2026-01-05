@@ -3,21 +3,28 @@
   <h1 class="text-xl font-bold mb-4">Choose Payment Method</h1>
   
   <div class="bg-white rounded-lg shadow">
-    <label class="flex items-center p-4 border-b cursor-pointer">
-      <input type="radio" name="payment" value="COD" [checked]="selectedPaymentMethod() === 'COD'" (change)="selectPaymentMethod('COD')" class="h-4 w-4 text-pink-600">
-      <span class="ml-3 font-semibold">Cash On Delivery</span>
+    <label class="flex items-center p-4 border-b cursor-pointer" [class.cursor-not-allowed]="!canPayWithWallet()" [class.opacity-50]="!canPayWithWallet()">
+      <input type="radio" name="payment" value="Wallet" [checked]="selectedPaymentMethod() === 'Wallet'" (change)="selectPaymentMethod('Wallet')" [disabled]="!canPayWithWallet()" class="h-4 w-4 text-pink-600">
+      <div class="ml-3">
+        <span class="font-semibold">Wallet</span>
+        <span class="text-xs text-green-600 ml-2">(Balance: ₹{{ stateService.currentUser()?.walletBalance }})</span>
+        @if(!canPayWithWallet()) {
+          <p class="text-xs text-red-500">Insufficient balance for this order</p>
+        }
+      </div>
     </label>
-    <label class="flex items-center p-4 border-b cursor-pointer">
-      <input type="radio" name="payment" value="Card" [checked]="selectedPaymentMethod() === 'Card'" (change)="selectPaymentMethod('Card')" class="h-4 w-4 text-pink-600">
-      <span class="ml-3 font-semibold">Credit/Debit Card</span>
+    <label class="flex items-center p-4 border-b cursor-pointer" [class.cursor-not-allowed]="!isCodAvailableInCart()" [class.opacity-50]="!isCodAvailableInCart()">
+      <input type="radio" name="payment" value="COD" [checked]="selectedPaymentMethod() === 'COD'" (change)="selectPaymentMethod('COD')" [disabled]="!isCodAvailableInCart()" class="h-4 w-4 text-pink-600">
+      <div class="ml-3">
+        <span class="font-semibold">Cash On Delivery</span>
+        @if(!isCodAvailableInCart()) {
+          <p class="text-xs text-red-500">Not available for all items in your cart</p>
+        }
+      </div>
     </label>
     <label class="flex items-center p-4 border-b cursor-pointer">
       <input type="radio" name="payment" value="UPI" [checked]="selectedPaymentMethod() === 'UPI'" (change)="selectPaymentMethod('UPI')" class="h-4 w-4 text-pink-600">
-      <span class="ml-3 font-semibold">UPI</span>
-    </label>
-     <label class="flex items-center p-4 cursor-pointer">
-      <input type="radio" name="payment" value="NetBanking" [checked]="selectedPaymentMethod() === 'NetBanking'" (change)="selectPaymentMethod('NetBanking')" class="h-4 w-4 text-pink-600">
-      <span class="ml-3 font-semibold">Net Banking</span>
+      <span class="ml-3 font-semibold">UPI & QR Code</span>
     </label>
   </div>
 

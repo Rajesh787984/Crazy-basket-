@@ -10,6 +10,6 @@ import { StateService } from '../../services/state.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FaqComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   faqs = this.stateService.faqs;
 }

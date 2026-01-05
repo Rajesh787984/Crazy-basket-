@@ -1,16 +1,16 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { GeminiService } from '../../services/gemini.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
+import { FormsModule } from '@angular/forms';
 
 interface OutfitRecommendation {
   category: string;
   product: Product;
   reasoning: string;
+  productId: string;
 }
 
 @Component({
@@ -20,9 +20,9 @@ interface OutfitRecommendation {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OutfitRecommenderComponent {
-  stateService = inject(StateService);
-  geminiService = inject(GeminiService);
-  productService = inject(ProductService);
+  stateService: StateService = inject(StateService);
+  geminiService: GeminiService = inject(GeminiService);
+  productService: ProductService = inject(ProductService);
 
   isLoading = signal(false);
   recommendations = signal<OutfitRecommendation[] | null>(null);
@@ -35,16 +35,21 @@ export class OutfitRecommenderComponent {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files[0]) {
       const file = input.files[0];
-      const previewUrl = URL.createObjectURL(file);
-      const base64 = await this.toBase64(file);
-      this.uploadedImage.set({ file, previewUrl, base64 });
+      try {
+        // Read the file as a Data URL for a more reliable preview.
+        const dataUrl = await this.toDataUrl(file);
+        // Extract the base64 part for the API call.
+        const base64 = dataUrl.split(',')[1];
+        this.uploadedImage.set({ file, previewUrl: dataUrl, base64 });
+      } catch (error) {
+        console.error("Error reading file:", error);
+        this.errorMessage.set("Could not process the selected image file.");
+      }
     }
   }
   
   removeImage() {
-    if (this.uploadedImage()?.previewUrl) {
-      URL.revokeObjectURL(this.uploadedImage()!.previewUrl);
-    }
+    // With Data URLs, we no longer need to call revokeObjectURL.
     this.uploadedImage.set(null);
   }
 
@@ -67,17 +72,12 @@ export class OutfitRecommenderComponent {
 
       const rawRecs = await this.geminiService.getOutfitRecommendations(this.occasion(), allProducts, imagePayload);
 
-            const detailedRecs = rawRecs
-        .map((rec: any) => {
-          const product = this.productService.getProductById(rec.id || rec.productId);
-          return product ? { 
-            ...rec, 
-            product, 
-            productId: product.id 
-          } : null;
+      const detailedRecs = rawRecs
+        .map(rec => {
+          const product = this.productService.getProductById(rec.productId);
+          return product ? { ...rec, product } : null;
         })
-        .filter((rec: any) => rec !== null);
-      
+        .filter((rec): rec is OutfitRecommendation => rec !== null);
 
       this.recommendations.set(detailedRecs);
 
@@ -93,14 +93,11 @@ export class OutfitRecommenderComponent {
     this.stateService.navigateTo('productDetail', { productId });
   }
 
-  private toBase64(file: File): Promise<string> {
+  private toDataUrl(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = () => {
-        const result = reader.result as string;
-        resolve(result.split(',')[1]);
-      };
+      reader.onload = () => resolve(reader.result as string);
       reader.onerror = error => reject(error);
     });
   }

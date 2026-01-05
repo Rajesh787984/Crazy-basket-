@@ -2,7 +2,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Category } from '../../../models/category.model';
 
 @Component({
@@ -12,8 +12,9 @@ import { Category } from '../../../models/category.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminCategoriesComponent {
-  stateService = inject(StateService);
-  fb = inject(FormBuilder);
+  stateService: StateService = inject(StateService);
+  // FIX: Explicitly type injected FormBuilder to resolve type inference issue.
+  fb: FormBuilder = inject(FormBuilder);
 
   categories = this.stateService.categories;
   showForm = signal(false);

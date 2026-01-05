@@ -1,0 +1,73 @@
+
+
+<div class="p-4 md:p-8 bg-gray-50 min-h-full">
+  <h1 class="text-3xl font-extrabold mb-6 text-gray-800">Compare Products</h1>
+
+  @if(comparisonProducts().length > 0) {
+    <div class="overflow-x-auto">
+      <div class="min-w-[1000px]">
+        <!-- Product Images and Basic Info -->
+        <div class="flex bg-white rounded-t-lg">
+          <div class="w-1/5 flex-shrink-0 p-4 font-bold text-gray-600">Feature</div>
+          @for(product of comparisonProducts(); track product.id) {
+            <div class="w-1/5 flex-shrink-0 p-4 border-l text-center">
+              <img [src]="product.images[0]" [alt]="'Comparison image for ' + product.name" class="w-full aspect-[3/4] object-cover rounded-md mb-4">
+              <h2 class="font-bold text-md text-pink-600">{{ product.name }}</h2>
+              <button (click)="stateService.navigateTo('productDetail', { productId: product.id })" class="text-sm text-blue-500 hover:underline mt-1">
+                View Product
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Comparison Table -->
+        <div class="bg-white rounded-b-lg">
+          @for (row of [
+            { key: 'price', label: 'Price' },
+            { key: 'rating', label: 'Rating' },
+            { key: 'fabric', label: 'Fabric' },
+            { key: 'fit', label: 'Fit' },
+            { key: 'sizes', label: 'Available Sizes' }
+          ]; track row.key) {
+            <div class="flex border-t items-center">
+              <div class="w-1/5 flex-shrink-0 p-4 font-semibold text-gray-700 bg-gray-50">{{ row.label }}</div>
+              @for(product of comparisonProducts(); track product.id) {
+                <div class="w-1/5 flex-shrink-0 p-4 border-l text-center text-gray-600">
+                  @switch (row.key) {
+                    @case ('price') {
+                      <span class="font-bold text-lg text-black">₹{{ product.price }}</span>
+                    }
+                    @case ('rating') {
+                      <span>{{ product.rating }} ★ <span class="text-xs">({{ product.reviews }} reviews)</span></span>
+                    }
+                    @case ('fabric') {
+                      <span>{{ product.fabric }}</span>
+                    }
+                    @case ('fit') {
+                      <span>{{ product.fit }}</span>
+                    }
+                    @case ('sizes') {
+                       <div class="flex flex-wrap gap-1 justify-center">
+                        @for(size of product.sizes; track size.name) {
+                          <span class="text-xs px-2 py-1 rounded-full border" [class.bg-gray-200]="!size.inStock" [class.line-through]="!size.inStock">{{ size.name }}</span>
+                        }
+                      </div>
+                    }
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="text-center py-20 bg-white rounded-lg shadow">
+      <h2 class="text-2xl font-bold">Comparison List is Empty</h2>
+      <p class="mt-2 text-gray-600">Add products to the comparison list to see them here.</p>
+      <button (click)="stateService.navigateTo('home')" class="mt-6 bg-pink-500 text-white font-bold py-2 px-6 rounded-lg">
+        Go Shopping
+      </button>
+    </div>
+  }
+</div>

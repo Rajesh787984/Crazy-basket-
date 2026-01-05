@@ -1,92 +1,125 @@
+<!-- Impersonation Banner -->
+@if(stateService.isImpersonating() && stateService.originalAdmin(); as admin) {
+  <div class="sticky top-0 bg-yellow-400 text-black text-center p-2 z-50 font-semibold text-sm">
+    You are viewing as {{ stateService.currentUser()?.name }}. 
+    <button (click)="stateService.stopImpersonating()" class="underline font-bold">Return to Admin ({{ admin.name }})</button>
+  </div>
+}
 
-<div class="lg:flex">
-  <app-sidebar [isOpen]="isSidebarOpen()"></app-sidebar>
-  
-  <div class="relative min-h-screen w-full bg-white shadow-lg flex-grow flex flex-col transition-transform duration-300 lg:transform-none min-w-0" 
-       [class.translate-x-64]="isSidebarOpen()"
-       [class.scale-95]="isSidebarOpen()"
-       [class.rounded-lg]="isSidebarOpen()"
-       [class.overflow-hidden]="isSidebarOpen()">
-       
-    <app-header></app-header>
+<div class="lg:max-w-7xl lg:mx-auto lg:shadow-xl lg:rounded-lg lg:overflow-hidden">
+  <div class="lg:flex">
+    <app-sidebar [isOpen]="isSidebarOpen()"></app-sidebar>
     
-    <main class="flex-grow overflow-y-auto pb-16 lg:pb-0">
-      @switch (currentView()) {
-        @case ('home') {
-          <app-home></app-home>
+    <div class="relative min-h-screen w-full bg-white flex-grow flex flex-col transition-transform duration-300 lg:transform-none lg:rounded-none min-w-0" 
+         [class.translate-x-64]="isSidebarOpen()"
+         [class.scale-95]="isSidebarOpen()"
+         [class.rounded-lg]="isSidebarOpen()"
+         [class.overflow-hidden]="isSidebarOpen()">
+         
+      <app-header></app-header>
+      
+      <main class="flex-grow overflow-y-auto pb-16 lg:pb-0">
+        @switch (currentView()) {
+          @case ('home') {
+            <app-home></app-home>
+          }
+          @case ('productList') {
+            @defer (on viewport) { <app-product-list></app-product-list> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('productDetail') {
+            @defer (on viewport) { <app-product-detail></app-product-detail> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('productComparison') {
+            @defer (on viewport) { <app-product-comparison></app-product-comparison> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('cart') {
+            @defer (on viewport) { <app-cart></app-cart> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('wishlist') {
+            @defer (on viewport) { <app-wishlist></app-wishlist> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('profile') {
+            @defer (on viewport) { <app-profile></app-profile> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+           @case ('wallet') {
+            @defer (on viewport) { <app-wallet></app-wallet> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('profile-edit') {
+            @defer (on viewport) { <app-profile-edit></app-profile-edit> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('language-settings') {
+            @defer (on viewport) { <app-language-settings></app-language-settings> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('privacy-policy') {
+            @defer (on viewport) { <app-privacy-policy></app-privacy-policy> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('contact-us') {
+            @defer (on viewport) { <app-contact-us></app-contact-us> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('faq') {
+            @defer (on viewport) { <app-faq></app-faq> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('login') {
+            @defer (on viewport) { <app-login></app-login> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('address') {
+            @defer (on viewport) { <app-address></app-address> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('address-form') {
+            @defer (on viewport) { <app-address-form></app-address-form> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('payment') {
+            @defer (on viewport) { <app-payment></app-payment> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+           @case ('manual-payment') {
+            @defer (on viewport) { <app-manual-payment></app-manual-payment> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('orderConfirmation') {
+            @defer (on viewport) { <app-order-confirmation></app-order-confirmation> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+           @case ('orders') {
+            @defer (on viewport) { <app-order-history></app-order-history> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('admin') {
+            @defer (on viewport) { <app-admin></app-admin> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('outfitRecommender') {
+            @defer (on viewport) { <app-outfit-recommender></app-outfit-recommender> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
+          @case ('partner-program') {
+            @defer (on viewport) { <app-partner-program></app-partner-program> } @placeholder { <app-loading-spinner></app-loading-spinner> }
+          }
         }
-        @case ('productList') {
-          <app-product-list></app-product-list>
-        }
-        @case ('productDetail') {
-          <app-product-detail></app-product-detail>
-        }
-        @case ('cart') {
-          <app-cart></app-cart>
-        }
-        @case ('profile') {
-          <app-profile></app-profile>
-        }
-        @case ('profile-edit') {
-          <app-profile-edit></app-profile-edit>
-        }
-        @case ('language-settings') {
-          <app-language-settings></app-language-settings>
-        }
-        @case ('privacy-policy') {
-          <app-privacy-policy></app-privacy-policy>
-        }
-        @case ('contact-us') {
-          <app-contact-us></app-contact-us>
-        }
-        @case ('faq') {
-          <app-faq></app-faq>
-        }
-        @case ('login') {
-          <app-login></app-login>
-        }
-        @case ('signup') {
-          <app-signup></app-signup>
-        }
-        @case ('address') {
-          <app-address></app-address>
-        }
-        @case ('address-form') {
-          <app-address-form></app-address-form>
-        }
-        @case ('payment') {
-          <app-payment></app-payment>
-        }
-         @case ('manual-payment') {
-          <app-manual-payment></app-manual-payment>
-        }
-        @case ('orderConfirmation') {
-          <app-order-confirmation></app-order-confirmation>
-        }
-         @case ('orders') {
-          <app-order-history></app-order-history>
-        }
-        @case ('myntra-insider') {
-          <app-myntra-insider></app-myntra-insider>
-        }
-        @case ('admin') {
-          <app-admin></app-admin>
-        }
-        @case ('outfitRecommender') {
-          <app-outfit-recommender></app-outfit-recommender>
-        }
+      </main>
+  
+      @if (currentView() !== 'admin' && !stateService.isImpersonating()) {
+        <div class="lg:hidden">
+          @if (currentView() !== 'productDetail' && currentView() !== 'address' && currentView() !== 'payment' && currentView() !== 'orderConfirmation' && currentView() !== 'address-form' && currentView() !== 'profile-edit' && currentView() !== 'language-settings' && currentView() !== 'privacy-policy' && currentView() !== 'contact-us' && currentView() !== 'faq' && currentView() !== 'manual-payment' && currentView() !== 'wallet' && currentView() !== 'productComparison') {
+            <app-bottom-nav></app-bottom-nav>
+          }
+        </div>
       }
-    </main>
-
-    @if (currentView() !== 'admin') {
-      <div class="lg:hidden">
-        @if (currentView() !== 'productDetail' && currentView() !== 'address' && currentView() !== 'payment' && currentView() !== 'orderConfirmation' && currentView() !== 'address-form' && currentView() !== 'profile-edit' && currentView() !== 'language-settings' && currentView() !== 'privacy-policy' && currentView() !== 'contact-us' && currentView() !== 'faq' && currentView() !== 'manual-payment') {
-          <app-bottom-nav></app-bottom-nav>
-        }
-      </div>
-    }
+    </div>
   </div>
 </div>
+
+<!-- Global Dynamic Popup -->
+@if(showPopup() && stateService.activePopup(); as popup) {
+  <div class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" (click)="closePopup()">
+    <div (click)="$event.stopPropagation()" class="bg-white rounded-lg overflow-hidden w-full max-w-sm relative transform transition-all scale-95 opacity-0 animate-[scale-in_0.3s_ease-out_forwards]" style="animation-name: scale-in; @keyframes scale-in { to { transform: scale(1); opacity: 1; } }">
+      <button (click)="closePopup()" class="absolute top-2 right-2 bg-white/50 hover:bg-white rounded-full p-1 z-10">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <img [src]="popup.imageUrl" class="w-full h-48 object-cover" alt="Popup Image">
+      <div class="p-6 text-center">
+        <h3 class="text-xl font-bold text-gray-800">{{ popup.title }}</h3>
+        <button (click)="navigateToPopupLink(popup.link)" class="mt-4 w-full bg-pink-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-pink-600 transition-colors">
+          Check it out!
+        </button>
+      </div>
+    </div>
+  </div>
+}
 
 <!-- Global Toast Notification -->
 @if(toastMessage(); as message) {
@@ -94,3 +127,6 @@
       {{ message }}
     </div>
 }
+
+<!-- Global Comparison Tray -->
+<app-comparison-tray></app-comparison-tray>

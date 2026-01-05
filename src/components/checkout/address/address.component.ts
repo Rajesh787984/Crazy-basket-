@@ -1,18 +1,17 @@
 
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { StateService } from '../../../services/state.service';
 import { Address } from '../../../models/address.model';
 
 @Component({
   selector: 'app-address',
   templateUrl: './address.component.html',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AddressComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   addresses = this.stateService.userAddresses;
   selectedAddressId = this.stateService.selectedAddressId;
 

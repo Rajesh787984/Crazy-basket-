@@ -1,4 +1,3 @@
-
 <div class="flex flex-col h-full bg-gray-100">
   <div class="flex-grow p-4">
     @if (cartItems().length > 0) {
@@ -7,12 +6,14 @@
           <div class="bg-white rounded-md p-4">
             @for (item of cartItems(); track item.product.id + item.size) {
               <div class="flex space-x-4 mb-4 pb-4 border-b last:border-b-0 last:mb-0 last:pb-0">
-                <img [src]="item.product.images[0]" [alt]="item.product.name" class="w-20 h-28 object-cover rounded-md">
+                <img [ngSrc]="item.customization?.photoPreviewUrl || item.product.images[0]" [alt]="item.product.name" width="80" height="112" class="w-20 h-28 object-cover rounded-md">
                 <div class="flex-grow">
                   <div class="flex justify-between">
                     <div>
-                      <h3 class="font-bold">{{ item.product.brand }}</h3>
-                      <p class="text-sm text-gray-600">{{ item.product.name }}</p>
+                      <h3 class="font-bold">{{ item.product.name }}</h3>
+                      @if(item.customization) {
+                        <p class="text-xs text-pink-600 font-semibold bg-pink-50 px-2 py-1 rounded-full inline-block mt-1">✓ Custom Photo Added</p>
+                      }
                       <div class="text-sm mt-1">
                         <span class="font-semibold">Size: {{ item.size }}</span>
                       </div>
@@ -30,10 +31,15 @@
                     </button>
                   </div>
                   <div class="flex items-baseline space-x-2 mt-2">
-                    <p class="font-bold">₹{{ item.product.price * item.quantity }}</p>
-                    @if (item.product.discount > 0) {
+                    <p class="font-bold">₹{{ item.displayPrice * item.quantity }}</p>
+                    @if (item.displayPrice !== item.product.originalPrice) {
                       <p class="text-xs text-gray-500 line-through">₹{{ item.product.originalPrice * item.quantity }}</p>
+                    }
+                    @if (item.product.discount > 0 && !stateService.isB2B()) {
                       <p class="text-xs text-orange-500 font-semibold">({{ item.product.discount }}% OFF)</p>
+                    }
+                     @if (stateService.isB2B() && item.product.b2bPrice) {
+                        <span class="text-xs font-bold text-white bg-blue-500 px-2 py-0.5 rounded">B2B</span>
                     }
                   </div>
                 </div>
@@ -54,26 +60,30 @@
               <div class="space-y-2 mt-4 text-sm">
                 <div class="flex justify-between">
                   <span>Total MRP</span>
-                  <span>₹{{ cartMRP() }}</span>
+                  <span>₹{{ cartMRP() | number }}</span>
                 </div>
                 <div class="flex justify-between">
                   <span>Discount on MRP</span>
-                  <span class="text-green-600">- ₹{{ cartDiscount() }}</span>
+                  <span class="text-green-600">- ₹{{ cartDiscount() | number }}</span>
                 </div>
                 @if(couponDiscount() > 0) {
                 <div class="flex justify-between">
                   <span>Coupon Discount</span>
-                  <span class="text-green-600">- ₹{{ couponDiscount() }}</span>
+                  <span class="text-green-600">- ₹{{ couponDiscount() | number }}</span>
                 </div>
                 }
-                <div class="flex justify-between">
-                  <span>Convenience Fee</span>
-                  <span class="text-green-600">FREE</span>
+                 <div class="flex justify-between">
+                  <span>Shipping Fee</span>
+                   @if (shippingCost() === 0) {
+                    <span class="text-green-600">FREE</span>
+                   } @else {
+                    <span>₹{{ shippingCost() | number }}</span>
+                   }
                 </div>
               </div>
               <div class="flex justify-between items-center text-md font-bold mt-4 pt-4 border-t">
                 <span>Total Amount</span>
-                <span>₹{{ cartTotal() }}</span>
+                <span>₹{{ cartTotal() | number }}</span>
               </div>
                <button (click)="placeOrder()" class="w-full bg-pink-500 text-white font-bold py-3 rounded-md mt-4">
                   PLACE ORDER

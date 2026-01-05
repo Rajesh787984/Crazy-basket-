@@ -1,20 +1,19 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
 import { StateService, ActiveFilters } from '../../services/state.service';
-import { FormsModule } from '@angular/forms';
+import { CountdownTimerComponent } from '../countdown-timer/countdown-timer.component';
 
 @Component({
   selector: 'app-product-list',
   templateUrl: './product-list.component.html',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, CountdownTimerComponent, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductListComponent implements OnInit {
-  productService = inject(ProductService);
-  stateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
+  stateService: StateService = inject(StateService);
 
   allProducts = signal<Product[]>([]);
   showFilters = signal(false);
@@ -41,18 +40,37 @@ export class ProductListComponent implements OnInit {
     return 'All Products';
   });
 
+  productsWithDisplayPrice = computed(() => {
+    const isB2B = this.stateService.isB2B();
+    return this.allProducts().map(p => ({
+      ...p,
+      displayPrice: (isB2B && p.b2bPrice) ? p.b2bPrice : p.price
+    }));
+  });
+
   filteredAndSortedProducts = computed(() => {
-    let products = this.allProducts();
+    let products = this.productsWithDisplayPrice();
     const filters = this.stateService.activeFilters();
     const sortOption = this.stateService.sortOption();
-    const query = this.stateService.searchQuery().toLowerCase();
+    const query = this.stateService.searchQuery().toLowerCase().trim();
 
     // Search
     if (query) {
-      products = products.filter(p => 
-        p.name.toLowerCase().includes(query) || 
-        p.brand.toLowerCase().includes(query)
-      );
+      const searchKeywords = query.split(' ').filter(k => k); // split by space and remove empty strings
+
+      products = products.filter(p => {
+        // Create a single searchable string for each product
+        const searchableText = [
+          p.name.toLowerCase(),
+          p.brand.toLowerCase(),
+          p.category.toLowerCase(),
+          ...(p.tags || []).map(t => t.toLowerCase()),
+          ...p.details.map(d => d.toLowerCase())
+        ].join(' ');
+
+        // Check if all keywords are present in the searchable text
+        return searchKeywords.every(keyword => searchableText.includes(keyword));
+      });
     }
     
     // Filtering
@@ -64,7 +82,7 @@ export class ProductListComponent implements OnInit {
       products = products.filter(p => {
         return filters.priceRanges.some(range => {
           const [min, max] = range.split('-').map(Number);
-          return p.price >= min && p.price <= (max || Infinity);
+          return p.displayPrice >= min && p.displayPrice <= (max || Infinity);
         });
       });
     }
@@ -72,10 +90,10 @@ export class ProductListComponent implements OnInit {
     // Sorting
     switch (sortOption) {
       case 'price_asc':
-        products.sort((a, b) => a.price - b.price);
+        products.sort((a, b) => a.displayPrice - b.displayPrice);
         break;
       case 'price_desc':
-        products.sort((a, b) => b.price - a.price);
+        products.sort((a, b) => b.displayPrice - a.displayPrice);
         break;
       case 'discount_desc':
         products.sort((a, b) => b.discount - a.discount);
@@ -125,5 +143,10 @@ export class ProductListComponent implements OnInit {
 
   formatReviews(reviews: number): string {
     return reviews >= 1000 ? `${(reviews / 1000).toFixed(1)}k` : reviews.toString();
+  }
+
+  isSaleActive(product: Product): boolean {
+    if (!product.flashSale) return false;
+    return new Date(product.flashSale.endDate) > new Date();
   }
 }

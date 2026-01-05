@@ -1,0 +1,39 @@
+
+@if(comparisonList().length > 0) {
+  <div class="fixed bottom-0 left-0 right-0 bg-white shadow-2xl z-30 border-t-2 border-pink-500 transform transition-transform duration-300 translate-y-0"
+       [class.translate-y-full]="comparisonList().length === 0">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-24">
+        <div class="flex items-center space-x-4">
+          <h3 class="font-bold text-lg hidden md:block">Compare Items</h3>
+          <div class="flex items-center space-x-2">
+            @for(product of comparisonProducts(); track product.id) {
+              <div class="relative group">
+                <img [src]="product.images[0]" [alt]="product.name" class="h-16 w-14 object-cover rounded-md border">
+                <button (click)="stateService.toggleComparison(product.id)" 
+                        class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full h-5 w-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity">
+                  &times;
+                </button>
+              </div>
+            }
+            @for(_ of placeholderSlots(); track $index) {
+                <div class="h-16 w-14 rounded-md border-2 border-dashed bg-gray-50 hidden md:flex items-center justify-center">
+                    <span class="text-gray-300 text-xs text-center">Add Item</span>
+                </div>
+            }
+          </div>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button (click)="stateService.clearComparison()" class="text-sm text-gray-500 hover:text-red-600">
+            Clear All
+          </button>
+          <button (click)="stateService.navigateTo('productComparison')" 
+                  [disabled]="comparisonList().length < 2"
+                  class="bg-pink-500 text-white font-bold py-2 px-6 rounded-lg disabled:bg-gray-300">
+            Compare ({{ comparisonList().length }})
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

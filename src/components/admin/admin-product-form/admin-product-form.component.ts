@@ -1,10 +1,12 @@
 
+
 import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
 import { ProductService } from '../../../services/product.service';
-import { FormBuilder, ReactiveFormsModule, Validators, FormArray } from '@angular/forms';
-import { Product } from '../../../models/product.model';
+import { FormBuilder, Validators, FormArray, ReactiveFormsModule } from '@angular/forms';
+// FIX: Import ProductSize to be used for type casting.
+import { Product, ProductSize } from '../../../models/product.model';
 
 @Component({
   selector: 'app-admin-product-form',
@@ -13,9 +15,10 @@ import { Product } from '../../../models/product.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminProductFormComponent implements OnInit {
-  stateService = inject(StateService);
-  productService = inject(ProductService);
-  fb = inject(FormBuilder);
+  stateService: StateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
+  // FIX: Explicitly type injected FormBuilder to resolve type inference issue.
+  fb: FormBuilder = inject(FormBuilder);
 
   productToEdit: Product | null = null;
   isEditMode = false;
@@ -25,14 +28,21 @@ export class AdminProductFormComponent implements OnInit {
     brand: ['', Validators.required],
     price: [0, [Validators.required, Validators.min(1)]],
     originalPrice: [0, [Validators.required, Validators.min(1)]],
+    b2bPrice: [null as number | null],
     rating: [0, [Validators.required, Validators.min(0), Validators.max(5)]],
     reviews: [0, [Validators.required, Validators.min(0)]],
-    category: ['Men' as const, Validators.required],
+    // FIX: Removed `as const` to allow `patchValue` to assign a string to this form control.
+    category: ['Men', Validators.required],
     images: this.fb.array([this.fb.control('', Validators.required)]),
     sizes: this.fb.array([], Validators.required),
     details: this.fb.array([this.fb.control('', Validators.required)]),
     fit: [''],
-    fabric: ['']
+    fabric: [''],
+    isCodAvailable: [true],
+    videoUrl: [''],
+    allowPhotoUpload: [false],
+    sizeChartUrl: [''],
+    preorderAvailable: [false],
   });
 
   get images() { return this.productForm.get('images') as FormArray; }
@@ -43,11 +53,15 @@ export class AdminProductFormComponent implements OnInit {
     this.productToEdit = this.stateService.productToEdit();
     this.isEditMode = !!this.productToEdit;
     if (this.isEditMode && this.productToEdit) {
-         this.productForm.patchValue({
-      ...this.productToEdit,
-      category: this.productToEdit.category as any
-    });
-  
+      this.productForm.patchValue({
+        ...this.productToEdit,
+        price: this.productToEdit.price,
+        originalPrice: this.productToEdit.originalPrice,
+        b2bPrice: this.productToEdit.b2bPrice || null,
+        allowPhotoUpload: this.productToEdit.allowPhotoUpload || false,
+        sizeChartUrl: this.productToEdit.sizeChartUrl || '',
+        preorderAvailable: this.productToEdit.preorderAvailable || false,
+      });
       // Set FormArrays
       this.images.clear();
       this.productToEdit.images.forEach(img => this.images.push(this.fb.control(img, Validators.required)));
@@ -78,21 +92,25 @@ export class AdminProductFormComponent implements OnInit {
     const discount = Math.round(((formValue.originalPrice - formValue.price) / formValue.originalPrice) * 100);
 
     if (this.isEditMode && this.productToEdit) {
-      const updatedProduct = {
-  ...this.productToEdit,
-  ...formValue,
-  discount,
-  sizes: formValue.sizes as any
-};
+      const updatedProduct: Product = {
+        ...this.productToEdit,
+        ...formValue,
+        // FIX: Cast `sizes` to the correct type `ProductSize[]` to resolve type mismatch.
+        sizes: formValue.sizes as ProductSize[],
+        b2bPrice: formValue.b2bPrice || undefined,
+        discount
+      };
       this.productService.updateProduct(updatedProduct);
       this.stateService.showToast('Product updated successfully!');
     } else {
-            const newProduct = {
+      const newProduct: Omit<Product, 'id'> = {
         ...formValue,
+        // FIX: Cast `sizes` to the correct type `ProductSize[]` to resolve type mismatch.
+        sizes: formValue.sizes as ProductSize[],
+        b2bPrice: formValue.b2bPrice || undefined,
+        flashSale: undefined, // ensure flashsale is not on new product
         discount,
-        sizes: formValue.sizes as any
       };
-
       this.productService.addProduct(newProduct);
       this.stateService.showToast('Product added successfully!');
     }

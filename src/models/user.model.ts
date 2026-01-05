@@ -5,6 +5,13 @@ export interface User {
   email: string;
   mobile: string;
   password?: string;
-  insiderPoints: number;
   isVerified: boolean;
+  walletBalance: number;
+  isBlacklisted: boolean;
+  userType: 'B2C' | 'B2B';
+  ipAddress: string;
+  deviceId: string;
+  referralCode?: string;
+  referredBy?: string;
+  photoUrl?: string;
 }

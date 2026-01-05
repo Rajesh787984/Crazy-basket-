@@ -1,0 +1,72 @@
+
+<div>
+  <h1 class="text-3xl font-bold mb-6">Referral Program Analytics</h1>
+
+  <!-- Key Metrics -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-sm font-medium text-gray-500">Total Commission Paid</h2>
+      <p class="text-3xl font-bold mt-2">₹{{ totalCommissionPaid() | number:'1.0-0' }}</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-sm font-medium text-gray-500">Successful Referrals</h2>
+      <p class="text-3xl font-bold mt-2">{{ referralPairs().length }}</p>
+    </div>
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-sm font-medium text-gray-500">Sales from Referrals</h2>
+      <p class="text-3xl font-bold mt-2">₹{{ referralSales() | number:'1.0-0' }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+    <!-- Top Referrers -->
+    <div class="xl:col-span-1 bg-white p-6 rounded-lg shadow">
+       <h2 class="text-xl font-bold mb-4">Top Referrers</h2>
+       <div class="space-y-4">
+        @for(referrer of topReferrers(); track referrer.user.id; let i = $index) {
+          <div class="flex items-center">
+            <span class="font-bold text-lg text-gray-400 w-8">{{ i + 1 }}.</span>
+            <div class="flex-grow">
+                <p class="font-semibold">{{ referrer.user.name }}</p>
+                <p class="text-xs text-gray-500">{{ referrer.referralCount }} referrals</p>
+            </div>
+            <p class="font-bold text-green-600">₹{{ referrer.commissionEarned | number }}</p>
+          </div>
+        } @empty {
+          <p class="text-gray-500 text-center py-4">No referral activity yet.</p>
+        }
+       </div>
+    </div>
+    
+    <!-- Commission Ledger -->
+    <div class="xl:col-span-2 bg-white p-6 rounded-lg shadow">
+        <h2 class="text-xl font-bold mb-4">Commission Ledger</h2>
+        <div class="max-h-[600px] overflow-y-auto">
+             <table class="min-w-full leading-normal">
+              <thead>
+                <tr class="bg-gray-100 text-gray-600 uppercase text-xs">
+                  <th class="py-2 px-3 text-left">Date</th>
+                  <th class="py-2 px-3 text-left">Referrer</th>
+                  <th class="py-2 px-3 text-left">Description</th>
+                  <th class="py-2 px-3 text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700 text-sm">
+                @for(tx of referralCommissions(); track $index) {
+                   @if(getUserById(tx.userId); as user) {
+                    <tr class="border-b border-gray-200 hover:bg-gray-50">
+                        <td class="py-2 px-3 whitespace-nowrap">{{ tx.date | date:'short' }}</td>
+                        <td class="py-2 px-3 font-semibold">{{ user.name }}</td>
+                        <td class="py-2 px-3">{{ tx.description }}</td>
+                        <td class="py-2 px-3 text-right font-bold text-green-600">₹{{ tx.amount }}</td>
+                    </tr>
+                   }
+                } @empty {
+                    <tr><td colspan="4" class="text-center py-8 text-gray-500">No commissions paid out yet.</td></tr>
+                }
+              </tbody>
+            </table>
+        </div>
+    </div>
+  </div>
+</div>

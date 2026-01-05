@@ -12,8 +12,8 @@ import { Product } from '../../../models/product.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminProductsComponent {
-  stateService = inject(StateService);
-  productService = inject(ProductService);
+  stateService: StateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
 
   // We need to get products directly from the service to show all of them
   products = computed(() => this.productService.getAllProducts());

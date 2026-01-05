@@ -1,10 +1,13 @@
 
+
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../services/state.service';
 import { ProductService } from '../../services/product.service';
-import { FormsModule } from '@angular/forms';
 import { Product } from '../../models/product.model';
+import { FormsModule } from '@angular/forms';
+
+type Suggestion = Product | { type: 'category', name: string };
 
 @Component({
   selector: 'app-header',
@@ -13,17 +16,18 @@ import { Product } from '../../models/product.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HeaderComponent {
-  stateService = inject(StateService);
-  productService = inject(ProductService);
+  stateService: StateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
 
   cartItemCount = this.stateService.cartItemCount;
+  wishlistItemCount = this.stateService.wishlistItemCount;
   currentView = this.stateService.currentView;
   isAuthenticated = this.stateService.isAuthenticated;
+  categories = this.stateService.categories;
   
   searchQuery = signal('');
-  suggestions = signal<Product[]>([]);
+  suggestions = signal<Suggestion[]>([]);
   showSuggestions = signal(false);
-  isMobileSearchActive = signal(false);
 
   toggleSidebar() {
     this.stateService.isSidebarOpen.update(v => !v);
@@ -32,12 +36,15 @@ export class HeaderComponent {
   goHome() { this.stateService.navigateTo('home'); }
   goToCart() { this.stateService.navigateTo('cart'); }
   goToProfile() { this.stateService.navigateTo('profile'); }
+  goToWishlist() { this.stateService.navigateTo('wishlist'); }
+  selectCategory(categoryName: string) {
+    this.stateService.navigateTo('productList', { category: categoryName });
+  }
 
   onSearch() {
     if (this.searchQuery().trim()) {
       this.stateService.navigateTo('productList', { searchQuery: this.searchQuery() });
       this.showSuggestions.set(false);
-      this.isMobileSearchActive.set(false);
       this.searchQuery.set('');
     }
   }
@@ -46,12 +53,26 @@ export class HeaderComponent {
     const query = this.searchQuery().trim().toLowerCase();
     if (query.length > 1) {
       const allProducts = this.productService.getAllProducts();
-      const filtered = allProducts.filter(p => 
-        p.name.toLowerCase().includes(query) ||
-        p.brand.toLowerCase().includes(query) ||
-        p.category.toLowerCase().includes(query)
-      ).slice(0, 5);
-      this.suggestions.set(filtered);
+      const allCategories = this.stateService.categories();
+      
+      const searchKeywords = query.split(' ').filter(k => k);
+
+      const productSuggestions = allProducts.filter(p => {
+        const searchableText = [
+          p.name.toLowerCase(),
+          p.brand.toLowerCase(),
+          p.category.toLowerCase(),
+          ...(p.tags || []).map(t => t.toLowerCase())
+        ].join(' ');
+        
+        return searchKeywords.every(keyword => searchableText.includes(keyword));
+      }).slice(0, 5);
+
+      const categorySuggestions = allCategories.filter(c => 
+        c.name.toLowerCase().includes(query)
+      ).map(c => ({ type: 'category' as const, name: c.name }));
+
+      this.suggestions.set([...categorySuggestions, ...productSuggestions]);
       this.showSuggestions.set(true);
     } else {
       this.suggestions.set([]);
@@ -59,10 +80,13 @@ export class HeaderComponent {
     }
   }
 
-  selectSuggestion(product: Product) {
-      this.stateService.navigateTo('productDetail', { productId: product.id });
+  selectSuggestion(suggestion: Suggestion) {
+      if ('type' in suggestion && suggestion.type === 'category') {
+        this.stateService.navigateTo('productList', { category: suggestion.name });
+      } else {
+        this.stateService.navigateTo('productDetail', { productId: (suggestion as Product).id });
+      }
       this.showSuggestions.set(false);
-      this.isMobileSearchActive.set(false);
       this.searchQuery.set('');
   }
   

@@ -11,6 +11,6 @@ import { Order } from '../../models/order.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class OrderHistoryComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
   orders = this.stateService.orders;
 }

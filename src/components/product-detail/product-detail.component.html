@@ -1,5 +1,6 @@
+<script type="application/ld+json" [textContent]="jsonLdScript()"></script>
 
-@if (product(); as p) {
+@if (productWithDisplayPrice(); as p) {
   <div class="lg:flex lg:space-x-8 lg:p-4">
     <!-- Image Gallery -->
     <div class="lg:w-3/5">
@@ -8,13 +9,13 @@
           <div class="absolute inset-0 transition-opacity duration-1000 ease-in-out"
               [class.opacity-100]="activeImageIndex() === i"
               [class.opacity-0]="activeImageIndex() !== i">
-            <img [src]="image" [alt]="p.name + ' image ' + (i+1)" class="w-full h-full object-contain">
+            <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill [priority]="i === 0" class="w-full h-full object-contain">
           </div>
         }
       </div>
       <div class="flex space-x-2 p-2 overflow-x-auto">
         @for(image of p.images; track image; let i = $index) {
-          <img (click)="goToSlide(i)" [src]="image" [alt]="p.name + ' thumbnail ' + (i+1)" class="w-20 h-28 object-cover rounded-md cursor-pointer border-2" [class.border-pink-500]="i === activeImageIndex()" [class.border-transparent]="i !== activeImageIndex()">
+          <img (click)="goToSlide(i)" [ngSrc]="image" [alt]="p.name + ' thumbnail ' + (i+1)" width="80" height="112" class="w-20 h-28 object-cover rounded-md cursor-pointer border-2" [class.border-pink-500]="i === activeImageIndex()" [class.border-transparent]="i !== activeImageIndex()">
         }
       </div>
     </div>
@@ -31,11 +32,34 @@
         </div>
       </div>
       
-      <div class="flex items-baseline space-x-2 mt-2">
-        <p class="text-xl font-bold">₹{{ p.price }}</p>
-        <p class="text-sm text-gray-500 line-through">MRP ₹{{ p.originalPrice }}</p>
-        <p class="text-sm text-orange-500 font-bold">({{ p.discount }}% OFF)</p>
-      </div>
+      @if(isFlashSaleActive()) {
+        <div class="mt-4 p-3 rounded-lg bg-red-50 border border-red-200">
+            <div class="flex items-center text-red-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                <h3 class="font-bold text-lg">Flash Sale!</h3>
+            </div>
+            <div class="flex items-baseline space-x-2 mt-2">
+                <p class="text-2xl font-bold text-red-600">₹{{ p.flashSale.price }}</p>
+                <p class="text-md text-gray-500 line-through">MRP ₹{{ p.originalPrice }}</p>
+            </div>
+            <div class="mt-2 text-center bg-red-100 text-red-800 font-mono text-sm font-bold py-1 px-2 rounded">
+              Ends in: {{ flashSaleTimeRemaining() }}
+            </div>
+        </div>
+      } @else {
+        <div class="flex items-baseline space-x-2 mt-2">
+          <p class="text-xl font-bold">₹{{ p.displayPrice }}</p>
+          @if(p.displayPrice !== p.originalPrice) {
+            <p class="text-sm text-gray-500 line-through">MRP ₹{{ p.originalPrice }}</p>
+          }
+          @if(p.discount > 0 && !p.b2bPrice) {
+            <p class="text-sm text-orange-500 font-bold">({{ p.discount }}% OFF)</p>
+          }
+          @if(stateService.isB2B() && p.b2bPrice) {
+            <span class="text-xs font-bold text-white bg-blue-500 px-2 py-0.5 rounded">B2B Price</span>
+          }
+        </div>
+      }
       <p class="text-xs text-teal-600 font-semibold mt-1">inclusive of all taxes</p>
 
       <!-- Size Selection -->
@@ -64,18 +88,50 @@
         </div>
       </div>
       
+      <!-- Custom Photo Upload -->
+      @if (p.allowPhotoUpload) {
+        <div class="mt-4 pt-4 border-t">
+          <h3 class="font-bold mb-2">✨ Add a Personal Touch (Optional)</h3>
+          @if(customization(); as cust) {
+            <div class="flex items-center space-x-4">
+              <img [src]="cust.previewUrl" alt="Custom photo preview" class="w-20 h-20 object-cover rounded-md border">
+              <div class="flex-grow">
+                <p class="text-sm font-semibold text-gray-700">{{ cust.file.name }}</p>
+                <p class="text-xs text-gray-500">{{ (cust.file.size / 1024).toFixed(1) }} KB</p>
+              </div>
+              <button (click)="removePhoto()" class="text-sm font-semibold text-red-500 hover:underline">Remove</button>
+            </div>
+          } @else {
+            <label class="w-full text-center py-3 border-2 border-dashed border-gray-300 rounded-md font-bold flex items-center justify-center cursor-pointer hover:bg-gray-50 text-gray-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                Upload Your Photo
+                <input type="file" (change)="handlePhotoUpload($event)" class="hidden" accept="image/png, image/jpeg">
+            </label>
+          }
+        </div>
+      }
+
       <!-- Action Buttons -->
       <div class="flex items-center space-x-2 mt-4">
-        <button (click)="addToBag()" class="w-1/2 py-3 border border-gray-300 rounded-md font-bold flex items-center justify-center">
+         <button (click)="addToBag()" class="w-full py-3 border border-gray-300 rounded-md font-bold flex items-center justify-center hover:bg-gray-50">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
           ADD TO BAG
         </button>
-        <button (click)="buyNow()" class="w-1/2 py-3 bg-pink-500 text-white rounded-md font-bold flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+        <button (click)="buyNow()" class="w-full py-3 bg-pink-500 text-white rounded-md font-bold flex items-center justify-center hover:bg-pink-600">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
           BUY NOW
         </button>
+      </div>
+
+      <!-- COD Availability -->
+      <div class="mt-4 text-sm font-semibold flex items-center" [class.text-green-600]="p.isCodAvailable" [class.text-red-600]="!p.isCodAvailable">
+        @if(p.isCodAvailable) {
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+          <span>Cash on Delivery Available</span>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+          <span>Cash on Delivery Not Available</span>
+        }
       </div>
 
       <!-- Product Details -->
@@ -100,6 +156,17 @@
       </div>
     </div>
   </div>
+
+  <!-- Video Section -->
+  @if(safeVideoUrl(); as url) {
+    <div class="mt-6 pt-4 border-t p-4">
+      <h3 class="font-bold text-lg mb-4">Product Video</h3>
+      <div class="aspect-video">
+        <iframe [src]="url" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full rounded-lg shadow-lg"></iframe>
+      </div>
+    </div>
+  }
+
   <!-- Ratings & Reviews -->
   <div class="mt-6 pt-4 border-t p-4">
     <h3 class="font-bold text-lg mb-2">Ratings & Reviews</h3>
@@ -153,7 +220,7 @@
     <div class="flex overflow-x-auto space-x-4">
       @for(sp of similarProducts(); track sp.id) {
         <div (click)="viewSimilarProduct(sp.id)" class="w-40 shrink-0 cursor-pointer">
-          <img [src]="sp.images[0]" [alt]="sp.name" class="w-full aspect-[3/4] object-cover rounded-md">
+          <img [ngSrc]="sp.images[0]" [alt]="sp.name" width="160" height="213" class="w-full aspect-[3/4] object-cover rounded-md">
           <h4 class="font-bold truncate mt-2">{{ sp.brand }}</h4>
           <p class="text-sm text-gray-500 truncate">{{ sp.name }}</p>
           <p class="font-semibold">₹{{ sp.price }}</p>

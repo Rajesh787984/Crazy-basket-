@@ -1,4 +1,8 @@
 
+
+
+
+
 <div class="flex h-full bg-gray-100 text-gray-800">
   <!-- Sidebar -->
   <aside class="w-64 flex-shrink-0 bg-gray-800 text-gray-200 flex flex-col">
@@ -39,14 +43,41 @@
       @case ('orders') {
         <app-admin-orders></app-admin-orders>
       }
+      @case ('payments') {
+        <app-admin-payments></app-admin-payments>
+      }
+       @case ('homepage') {
+        <app-admin-homepage></app-admin-homepage>
+      }
+       @case ('popups') {
+        <app-admin-popups></app-admin-popups>
+      }
+      @case ('bulk-updater') {
+        <app-admin-bulk-updater></app-admin-bulk-updater>
+      }
+      @case ('flash-sales') {
+        <app-admin-flash-sales></app-admin-flash-sales>
+      }
        @case ('reviews') {
         <app-admin-reviews></app-admin-reviews>
       }
       @case ('users') {
         <app-admin-users></app-admin-users>
       }
+      @case ('referrals') {
+        <app-admin-referrals></app-admin-referrals>
+      }
+      @case ('coupons') {
+        <app-admin-coupons></app-admin-coupons>
+      }
       @case ('banners') {
         <app-admin-banners></app-admin-banners>
+      }
+      @case ('small-banner') {
+        <app-admin-small-banner></app-admin-small-banner>
+      }
+      @case ('live-chat') {
+        <app-admin-live-chat></app-admin-live-chat>
       }
       @case ('settings') {
         <app-admin-settings></app-admin-settings>

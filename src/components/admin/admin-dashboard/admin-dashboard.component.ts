@@ -10,7 +10,7 @@ import { StateService } from '../../../services/state.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdminDashboardComponent {
-  stateService = inject(StateService);
+  stateService: StateService = inject(StateService);
 
   totalSales = this.stateService.totalSales;
   totalOrders = this.stateService.orders;
