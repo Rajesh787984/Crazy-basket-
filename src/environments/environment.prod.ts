@@ -7,7 +7,8 @@ export const environment = {
     storageBucket: "crazybasketmall.firebasestorage.app",
     messagingSenderId: "442095144764",
     appId: "1:442095144764:web:c5c9f6b6b5bc29f2169839",
-    measurementId: "G-M4VPP5Q3KM"
+    measurementId: "G-M4VPP5Q3KM",
+    databaseURL: "https://crazybasketmall-default-rtdb.asia-southeast1.firebasedatabase.app"
   },
-  adminEmails: ['Rpsolutionyt@gmail.com']
+  adminEmails: ['rpsolutionyt@gmail.com']
 };
