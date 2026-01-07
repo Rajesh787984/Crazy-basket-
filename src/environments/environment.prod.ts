@@ -8,5 +8,6 @@ export const environment = {
     messagingSenderId: "442095144764",
     appId: "1:442095144764:web:c5c9f6b6b5bc29f2169839",
     measurementId: "G-M4VPP5Q3KM"
-  }
+  },
+  adminEmails: ['Rpsolutionyt@gmail.com']
 };
