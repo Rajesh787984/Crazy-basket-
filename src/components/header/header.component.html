@@ -13,10 +13,21 @@
         </button>
       }
       <div (click)="goHome()" class="cursor-pointer flex items-center">
-        <svg class="h-8 w-auto" viewBox="0 0 250 40" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" stroke="#F97316" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" transform="scale(1.4) translate(2, 3)"></path>
-            <text x="55" y="32" font-family="sans-serif" font-size="28" font-weight="bold" fill="#2563EB">Crazy</text>
-            <text x="150" y="32" font-family="sans-serif" font-size="28" font-weight="bold" fill="#F97316">Basket</text>
+        <svg class="h-8 w-auto" viewBox="0 0 220 40" xmlns="http://www.w3.org/2000/svg">
+          <!-- Icon: Shopping bag with a 'crazy' lightning bolt -->
+          <g transform="translate(0, 2)">
+            <!-- Bag shape -->
+            <path d="M5 10 H35 L30 35 H10 Z" fill="#EC4899" stroke="#EC4899" stroke-width="2" stroke-linejoin="round"/>
+            <!-- Handle -->
+            <path d="M12 10 C12 2, 28 2, 28 10" stroke="#EC4899" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+            <!-- Lightning Bolt -->
+            <path d="M22 18 L18 24 L22 24 L18 30" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          
+          <!-- Text -->
+          <text x="45" y="32" font-family="Poppins, Verdana, sans-serif" font-size="26" font-weight="bold">
+            <tspan fill="#EC4899">Crazy</tspan><tspan fill="#1F2937">Basket</tspan>
+          </text>
         </svg>
       </div>
     </div>

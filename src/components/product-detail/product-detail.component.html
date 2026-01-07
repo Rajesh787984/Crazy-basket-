@@ -139,7 +139,7 @@
         <h3 class="font-bold text-lg mb-2">Product Details</h3>
         <p class="text-sm text-gray-600 mb-4">{{ p.details[0] }}</p>
         <ul class="list-disc list-inside text-sm text-gray-600 space-y-1 mb-4">
-          @for(detail of p.details.slice(1); track detail) {
+          @for(detail of productDetailsBody(); track detail) {
             <li>{{ detail }}</li>
           }
         </ul>
@@ -218,9 +218,9 @@
   <div class="mt-6 pt-4 border-t p-4">
     <h3 class="font-bold text-lg mb-4">SIMILAR PRODUCTS</h3>
     <div class="flex overflow-x-auto space-x-4">
-      @for(sp of similarProducts(); track sp.id) {
+      @for(sp of similarProducts(); track sp.id; let i = $index) {
         <div (click)="viewSimilarProduct(sp.id)" class="w-40 shrink-0 cursor-pointer">
-          <img [ngSrc]="sp.images[0]" [alt]="sp.name" width="160" height="213" class="w-full aspect-[3/4] object-cover rounded-md">
+          <img [ngSrc]="sp.images[0]" [alt]="sp.name" width="160" height="213" class="w-full aspect-[3/4] object-cover rounded-md" [priority]="i < 4">
           <h4 class="font-bold truncate mt-2">{{ sp.brand }}</h4>
           <p class="text-sm text-gray-500 truncate">{{ sp.name }}</p>
           <p class="font-semibold">₹{{ sp.price }}</p>

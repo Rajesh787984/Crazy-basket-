@@ -6,10 +6,10 @@
         <div class="p-4">
           <h2 class="text-xl font-bold mb-4 text-gray-800">SHOP BY CATEGORY</h2>
           <div class="flex space-x-4 overflow-x-auto pb-2 -mx-4 px-4">
-            @for(category of homeCategories(); track category.name) {
+            @for(category of homeCategories(); track category.name; let i = $index) {
               <div (click)="selectCategory(category.name)" class="flex-shrink-0 w-14 text-center cursor-pointer group">
                 <div class="w-14 h-14 rounded-full overflow-hidden shadow-md group-hover:shadow-lg transition-shadow transform group-hover:scale-105 duration-300" [class]="category.bgColor">
-                  <img [ngSrc]="category.img" [alt]="category.name" width="56" height="56" class="w-full h-full object-cover">
+                  <img [ngSrc]="category.img" [alt]="category.name" width="56" height="56" class="w-full h-full object-cover" [priority]="i < 5">
                 </div>
                 <p class="mt-2 font-semibold text-xs text-gray-700">{{ category.name }}</p>
               </div>
@@ -59,9 +59,9 @@
         <div class="p-4">
           <h2 class="text-xl font-bold mb-4 text-gray-800">TOP DEALS</h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @for(deal of topDeals; track deal.title) {
+            @for(deal of topDeals; track deal.title; let i = $index) {
               <div (click)="selectCategory(deal.category === 'Men' ? 'Men' : 'Women')" class="cursor-pointer group">
-                <img [ngSrc]="deal.img" [alt]="deal.title" width="400" height="300" class="w-full h-auto rounded-lg shadow-md group-hover:shadow-xl transition-shadow transform group-hover:scale-105 duration-300">
+                <img [ngSrc]="deal.img" [alt]="deal.title" width="400" height="300" class="w-full h-auto rounded-lg shadow-md group-hover:shadow-xl transition-shadow transform group-hover:scale-105 duration-300" [priority]="i < 2">
                 <h3 class="font-bold mt-2 text-gray-700">{{ deal.title }}</h3>
                 <p class="text-sm text-green-600 font-semibold">{{ deal.discount }}</p>
               </div>
@@ -74,10 +74,10 @@
         <div class="p-4">
           <h2 class="text-xl font-bold mb-4 text-gray-800">TRENDING FOR YOU</h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            @for(product of featuredProducts(); track product.id) {
+            @for(product of featuredProducts(); track product.id; let i = $index) {
               <div (click)="viewProduct(product.id)" class="bg-white rounded-lg overflow-hidden cursor-pointer group border hover:shadow-xl transition-shadow duration-300">
                 <div class="relative">
-                  <img [ngSrc]="product.images[0]" [alt]="product.name" width="300" height="400" class="w-full aspect-[3/4] object-cover">
+                  <img [ngSrc]="product.images[0]" [alt]="product.name" width="300" height="400" class="w-full aspect-[3/4] object-cover" [priority]="i < 2">
                 </div>
                 <div class="p-2">
                   <h3 class="font-bold truncate text-gray-800">{{ product.name }}</h3>

@@ -1,9 +1,8 @@
-
 import { Injectable, signal, computed, inject, effect } from '@angular/core';
 import { Product } from '../models/product.model';
 import { User } from '../models/user.model';
 import { Address } from '../models/address.model';
-import { Order, OrderItem, OrderStatus } from '../models/order.model';
+import { Order, OrderItem, OrderStatus, ReturnStatus } from '../models/order.model';
 import { Review } from '../models/review.model';
 import { Category } from '../models/category.model';
 import { ProductService } from './product.service';
@@ -48,6 +47,14 @@ export class StateService {
   private authService: AuthService = inject(AuthService);
   
   constructor() {
+    // Language setup from localStorage
+    if (typeof localStorage !== 'undefined') {
+      const storedLang = localStorage.getItem('crazyBasketLang');
+      if (storedLang) {
+        this.currentLanguage.set(storedLang);
+      }
+    }
+    
     // This effect syncs the application's user state with the mock auth service's state.
     effect(() => {
       const authUser = this.authService.currentUser();
@@ -79,13 +86,13 @@ export class StateService {
   currentUser = signal<User | null>(null);
   originalAdmin = signal<User | null>(null); // For impersonation
   isAuthenticated = computed(() => !!this.currentUser());
-  isAdmin = computed(() => this.currentUser()?.email === 'admin@crazybasket.com' && !this.isImpersonating());
+  isAdmin = computed(() => this.authService.isAdmin() && !this.isImpersonating());
   isImpersonating = computed(() => !!this.originalAdmin());
   isB2B = computed(() => this.currentUser()?.userType === 'B2B');
   
   // Navigation
   currentView = signal<string>('home');
-  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'outfitRecommender', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'productComparison', 'wishlist', 'partner-program']);
+  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'outfitRecommender', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'productComparison', 'wishlist', 'partner-program', 'coupons', 'return-request']);
   lastNavigatedView = signal<string>('home');
 
   // Admin Panel Navigation
@@ -95,6 +102,7 @@ export class StateService {
   // UI
   isSidebarOpen = signal<boolean>(false);
   toastMessage = signal<string | null>(null);
+  currentLanguage = signal<string>('en');
   
   // Catalog
   selectedProductId = signal<string | null>(null);
@@ -121,6 +129,7 @@ export class StateService {
   // Orders & Reviews
   orders = signal<Order[]>([]);
   latestOrderId = signal<string | null>(null);
+  selectedOrderItemForReturn = signal<{ orderId: string, itemId: string } | null>(null);
   userReviews = signal<Review[]>([]);
   transactions = signal<Transaction[]>([]);
 
@@ -225,6 +234,14 @@ export class StateService {
 
   // --- METHODS ---
 
+  setLanguage(code: string) {
+    this.currentLanguage.set(code);
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem('crazyBasketLang', code);
+    }
+    this.showToast(`Language preference saved.`);
+  }
+
   private createNewAppUserFromAuthUser(authUser: MockAuthUser): User {
     const newId = authUser.uid;
     const name = authUser.displayName || authUser.email!.split('@')[0];
@@ -245,7 +262,7 @@ export class StateService {
     return newUser;
   }
 
-  navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product }) {
+  navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product, orderItem?: { orderId: string, itemId: string } }) {
     if (view === 'admin' && !this.isAdmin()) {
       this.showToast('Access Denied: You are not an admin.');
       return;
@@ -262,6 +279,7 @@ export class StateService {
     if (data?.productId) this.selectedProductId.set(data.productId);
     if (data?.addressToEdit) this.addressToEdit.set(data.addressToEdit); else this.addressToEdit.set(null);
     if (data?.productToEdit) this.productToEdit.set(data.productToEdit); else this.productToEdit.set(null);
+    if (data?.orderItem) this.selectedOrderItemForReturn.set(data.orderItem); else this.selectedOrderItemForReturn.set(null);
     if (data?.category !== undefined) {
       this.selectedCategory.set(data.category);
       this.searchQuery.set('');
@@ -547,6 +565,63 @@ export class StateService {
     } else {
         this.showToast(`Order #${orderId} status updated to ${status}.`);
     }
+  }
+
+  requestReturn(orderId: string, itemId: string, reason: string, comment: string, photoUrl?: string) {
+    this.orders.update(orders => {
+        return orders.map(order => {
+            if (order.id === orderId) {
+                const updatedItems = order.items.map(item => {
+                    if (item.id === itemId) {
+                        return { ...item, returnRequest: { reason, comment, photoUrl, status: 'Pending' as const } };
+                    }
+                    return item;
+                });
+                return { ...order, items: updatedItems };
+            }
+            return order;
+        });
+    });
+    this.showToast('Return requested successfully.');
+    this.navigateTo('orders');
+  }
+
+  updateReturnStatus(orderId: string, itemId: string, status: ReturnStatus) {
+      let orderToUpdate: Order | undefined;
+      let itemToUpdate: OrderItem | undefined;
+
+      this.orders.update(orders => {
+          const updatedOrders = orders.map(order => {
+              if (order.id === orderId) {
+                  orderToUpdate = order;
+                  const updatedItems = order.items.map(item => {
+                      if (item.id === itemId && item.returnRequest) {
+                          itemToUpdate = item;
+                          return { ...item, returnRequest: { ...item.returnRequest, status } };
+                      }
+                      return item;
+                  });
+                  return { ...order, items: updatedItems };
+              }
+              return order;
+          });
+          return updatedOrders;
+      });
+
+      if (status === 'Approved' && orderToUpdate && itemToUpdate) {
+          const refundAmount = itemToUpdate.price * itemToUpdate.quantity;
+          this.updateUserWallet(orderToUpdate.userId, refundAmount, 'add');
+          this.addTransaction({
+              userId: orderToUpdate.userId,
+              type: 'Credit',
+              amount: refundAmount,
+              description: `Refund for return of ${itemToUpdate.product.name}`,
+              date: new Date()
+          });
+          this.showToast(`Return approved. ₹${refundAmount} credited to user's wallet.`);
+      } else {
+          this.showToast(`Return status updated to ${status}.`);
+      }
   }
 
   placeOrder() {

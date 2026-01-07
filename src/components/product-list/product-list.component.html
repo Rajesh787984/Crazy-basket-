@@ -48,10 +48,10 @@
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-      @for(product of filteredAndSortedProducts(); track product.id) {
+      @for(product of filteredAndSortedProducts(); track product.id; let i = $index) {
         <div class="bg-white rounded-lg overflow-hidden cursor-pointer group border flex flex-col relative">
           <div (click)="viewProduct(product.id)" class="relative">
-            <img [ngSrc]="product.images[0]" [alt]="product.name + ' by ' + product.brand" width="300" height="400" class="w-full aspect-[3/4] object-cover">
+            <img [ngSrc]="product.images[0]" [alt]="product.name + ' by ' + product.brand" width="300" height="400" class="w-full aspect-[3/4] object-cover" [priority]="i < 2">
             <div class="absolute bottom-2 left-2 bg-white/80 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center">
               {{ product.rating }} ★ | {{ formatReviews(product.reviews) }}
             </div>

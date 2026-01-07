@@ -39,9 +39,13 @@
     <div class="border-t mt-4 pt-4 px-4 text-sm text-gray-600">
       <a (click)="stateService.navigateTo('partner-program')" class="block py-2 hover:text-pink-500 cursor-pointer">Partner Program</a>
       <a (click)="stateService.navigateTo('outfitRecommender')" class="block py-2 hover:text-pink-500 cursor-pointer">AI Style Helper</a>
-      <a (click)="stateService.showToast('Feature not implemented yet')" class="block py-2 hover:text-pink-500 cursor-pointer">Gift Cards</a>
       <a (click)="stateService.navigateTo('contact-us')" class="block py-2 hover:text-pink-500 cursor-pointer">Contact Us</a>
       <a (click)="stateService.navigateTo('faq')" class="block py-2 hover:text-pink-500 cursor-pointer">FAQs</a>
+    </div>
+
+    <div class="p-4 mt-8 text-center text-xs text-gray-400">
+        <p>&copy; {{ currentYear }} Crazy Basket.</p>
+        <p>All Rights Reserved.</p>
     </div>
   </div>
 </div>

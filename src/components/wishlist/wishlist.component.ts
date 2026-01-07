@@ -13,7 +13,7 @@ import { Product } from '../../models/product.model';
       <h1 class="text-2xl font-bold mb-6">My Wishlist ({{ wishlistProducts().length }} items)</h1>
       @if (wishlistProducts().length > 0) {
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          @for (product of wishlistProducts(); track product.id) {
+          @for (product of wishlistProducts(); track product.id; let i = $index) {
             <div class="border rounded-lg overflow-hidden group relative flex flex-col">
               <div class="absolute top-2 right-2 z-10">
                 <button (click)="removeFromWishlist(product.id)" title="Remove from wishlist" class="bg-white/70 backdrop-blur-sm rounded-full p-2 text-gray-700 hover:text-red-500 hover:bg-white transition-all duration-200">
@@ -23,7 +23,7 @@ import { Product } from '../../models/product.model';
                 </button>
               </div>
               <div class="aspect-[2/3] overflow-hidden cursor-pointer" (click)="viewProduct(product.id)">
-                <img [ngSrc]="product.images[0]" [alt]="product.name" width="200" height="300" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+                <img [ngSrc]="product.images[0]" [alt]="product.name" width="200" height="300" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" [priority]="i < 2">
               </div>
               <div class="p-3 bg-white flex-grow flex flex-col">
                 <h3 class="font-bold text-sm truncate">{{ product.brand }}</h3>

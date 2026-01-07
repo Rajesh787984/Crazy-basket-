@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal, OnInit, computed, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnDestroy, effect } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
@@ -14,7 +14,7 @@ import { DomSanitizer, SafeResourceUrl, Title, Meta } from '@angular/platform-br
   imports: [CommonModule, ReactiveFormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProductDetailComponent implements OnInit, OnDestroy {
+export class ProductDetailComponent implements OnDestroy {
   productService: ProductService = inject(ProductService);
   stateService: StateService = inject(StateService);
   fb: FormBuilder = inject(FormBuilder);
@@ -72,8 +72,22 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
     return url ? this.sanitizer.bypassSecurityTrustResourceUrl(url) : null;
   });
 
-  ngOnInit() {
-    this.loadProduct();
+  productDetailsBody = computed(() => {
+    const p = this.product();
+    if (!p || !p.details || p.details.length < 2) {
+      return [];
+    }
+    return p.details.slice(1);
+  });
+
+  constructor() {
+    effect(() => {
+      // This effect automatically tracks `this.stateService.selectedProductId()`
+      // because it's read inside `loadProduct()`. Whenever the ID changes,
+      // this function will re-run, ensuring the component updates correctly and
+      // properly cleans up timers (like sliders and countdowns) from the previous product.
+      this.loadProduct();
+    });
   }
 
   ngOnDestroy() {
@@ -271,7 +285,6 @@ export class ProductDetailComponent implements OnInit, OnDestroy {
   viewSimilarProduct(productId: string) {
     this.stateService.navigateTo('productDetail', { productId });
     window.scrollTo(0, 0);
-    this.loadProduct(); // Reload product data on navigation
   }
 
   formatReviews(reviews: number): string { return reviews >= 1000 ? `${(reviews / 1000).toFixed(1)}k` : reviews.toString(); }

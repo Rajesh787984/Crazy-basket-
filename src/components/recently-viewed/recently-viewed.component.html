@@ -4,10 +4,10 @@
   <div class="p-4 mt-4">
     <h2 class="text-xl font-bold mb-4 text-gray-800">RECENTLY VIEWED</h2>
     <div class="flex space-x-4 overflow-x-auto pb-2 -mx-4 px-4">
-      @for(product of recentlyViewedProducts(); track product.id) {
+      @for(product of recentlyViewedProducts(); track product.id; let i = $index) {
         <div (click)="viewProduct(product.id)" class="bg-white rounded-lg overflow-hidden cursor-pointer group border hover:shadow-xl transition-shadow duration-300 w-40 flex-shrink-0">
           <div class="relative">
-            <img [src]="product.images[0]" [alt]="'Recently viewed: ' + product.name" class="w-full aspect-[3/4] object-cover">
+            <img [ngSrc]="product.images[0]" [alt]="'Recently viewed: ' + product.name" width="160" height="213" class="w-full aspect-[3/4] object-cover" [priority]="i < 4">
           </div>
           <div class="p-2">
             <h3 class="font-bold truncate text-sm text-gray-800">{{ product.name }}</h3>

@@ -15,6 +15,8 @@ export class SidebarComponent {
   
   categories = this.stateService.categories;
 
+  currentYear = new Date().getFullYear();
+
   selectCategory(category: string) {
     this.stateService.navigateTo('productList', { category });
   }

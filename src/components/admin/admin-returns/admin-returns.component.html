@@ -1,0 +1,74 @@
+<div>
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-3xl font-bold">Manage Returns</h1>
+    <div>
+        <label for="status-filter" class="text-sm font-medium text-gray-700 mr-2">Filter by status:</label>
+        <select id="status-filter" [value]="selectedStatus()" (change)="setStatusFilter($event)" class="border rounded-md p-2 bg-white">
+            <option value="Pending">Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+    </div>
+  </div>
+
+  <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+    <table class="min-w-full leading-normal">
+      <thead>
+        <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+          <th class="py-3 px-5 text-left">Order & Item</th>
+          <th class="py-3 px-5 text-left">Customer</th>
+          <th class="py-3 px-5 text-left">Reason & Comment</th>
+          <th class="py-3 px-5 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="text-gray-700">
+        @for(req of returnRequests(); track req.item.id) {
+          <tr class="border-b border-gray-200 hover:bg-gray-100">
+            <td class="py-3 px-5">
+              <div class="flex items-center">
+                @if (req.item.returnRequest?.photoUrl) {
+                  <img [src]="req.item.returnRequest.photoUrl" alt="Customer photo" class="w-16 h-20 object-cover rounded-md mr-4">
+                } @else {
+                  <img [src]="req.item.product.images[0]" alt="Product image" class="w-16 h-20 object-cover rounded-md mr-4">
+                }
+                <div>
+                  <p class="font-semibold text-sm">{{ req.item.product.name }}</p>
+                  <p class="text-xs text-gray-500">Order: #{{ req.order.id }}</p>
+                  <p class="text-xs text-gray-500">Value: ₹{{ req.item.price * req.item.quantity }}</p>
+                </div>
+              </div>
+            </td>
+            <td class="py-3 px-5 text-sm">
+              <p class="font-semibold">{{ req.user?.name }}</p>
+              <p class="text-xs text-gray-500">{{ req.user?.email }}</p>
+            </td>
+             <td class="py-3 px-5 text-sm max-w-sm">
+              <p class="font-bold">{{ req.item.returnRequest?.reason }}</p>
+              <p class="text-xs text-gray-600 mt-1 italic">"{{ req.item.returnRequest?.comment }}"</p>
+            </td>
+            <td class="py-3 px-5 text-center">
+              @if (req.item.returnRequest?.status === 'Pending') {
+                <div class="flex justify-center space-x-2">
+                    <button (click)="updateStatus(req.order.id, req.item.id, 'Approved')" class="bg-green-100 text-green-700 font-bold py-1 px-3 rounded-lg text-xs hover:bg-green-200">Approve</button>
+                    <button (click)="updateStatus(req.order.id, req.item.id, 'Rejected')" class="bg-red-100 text-red-700 font-bold py-1 px-3 rounded-lg text-xs hover:bg-red-200">Reject</button>
+                </div>
+              } @else {
+                 <span class="font-semibold text-xs px-2 py-1 rounded-full"
+                    [class.bg-green-100]="req.item.returnRequest?.status === 'Approved'"
+                    [class.text-green-800]="req.item.returnRequest?.status === 'Approved'"
+                    [class.bg-red-100]="req.item.returnRequest?.status === 'Rejected'"
+                    [class.text-red-800]="req.item.returnRequest?.status === 'Rejected'">
+                    {{ req.item.returnRequest?.status }}
+                </span>
+              }
+            </td>
+          </tr>
+        } @empty {
+           <tr>
+            <td colspan="4" class="text-center py-10 text-gray-500">No return requests with status "{{ selectedStatus() }}".</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

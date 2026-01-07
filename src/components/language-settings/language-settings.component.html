@@ -1,12 +1,21 @@
 
-<div class="p-4 bg-gray-100 min-h-full">
-  <h1 class="text-xl font-bold mb-4">Language Settings</h1>
+<div class="p-4 bg-gray-100 dark:bg-gray-900 min-h-full">
+  <h1 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Language Settings</h1>
   
-  <div class="bg-white rounded-lg shadow">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
     @for(lang of languages; track lang.code) {
-      <div (click)="selectLanguage(lang.name)" class="flex justify-between items-center p-4 border-b cursor-pointer hover:bg-gray-50">
-        <span class="font-semibold">{{ lang.name }}</span>
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+      <div (click)="selectLanguage(lang.code)"
+           class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700"
+           [class.bg-pink-50]="currentLanguage() === lang.code"
+           [class.dark:bg-pink-900/50]="currentLanguage() === lang.code">
+        <span class="font-semibold text-gray-800 dark:text-gray-200">{{ lang.name }}</span>
+        @if (currentLanguage() === lang.code) {
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-pink-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+          </svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+        }
       </div>
     }
   </div>

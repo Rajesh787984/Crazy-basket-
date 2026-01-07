@@ -11,13 +11,32 @@
             <p class="text-sm text-gray-500">Placed on: {{ order.date | date: 'longDate' }}</p>
           </div>
           <div>
-            @for(item of order.items; track item.product.id) {
-              <div class="flex items-center space-x-4 py-2">
+            @for(item of order.items; track item.id) {
+              <div class="flex items-start space-x-4 py-3 border-b last:border-b-0">
                 <img [src]="item.product.images[0]" [alt]="item.product.name" class="w-16 h-20 object-cover rounded-md">
                 <div class="flex-grow">
                   <p class="font-semibold">{{ item.product.brand }}</p>
                   <p class="text-sm text-gray-600">{{ item.product.name }}</p>
                   <p class="text-xs text-gray-500">Qty: {{item.quantity}} | Size: {{item.size}}</p>
+                  
+                  @if (item.returnRequest) {
+                    <div class="mt-2 text-xs">
+                      <span class="font-bold">{{ 'returns.return_status' | translate }}:</span>
+                      <span class="font-semibold px-2 py-1 rounded-full ml-1"
+                        [class.bg-yellow-100]="item.returnRequest.status === 'Pending'"
+                        [class.text-yellow-800]="item.returnRequest.status === 'Pending'"
+                        [class.bg-green-100]="item.returnRequest.status === 'Approved'"
+                        [class.text-green-800]="item.returnRequest.status === 'Approved'"
+                        [class.bg-red-100]="item.returnRequest.status === 'Rejected'"
+                        [class.text-red-800]="item.returnRequest.status === 'Rejected'">
+                        {{ item.returnRequest.status }}
+                      </span>
+                    </div>
+                  } @else if (order.status === 'Delivered') {
+                    <button (click)="requestReturn(order.id, item.id)" class="mt-2 text-xs font-bold text-pink-600 border border-pink-500 rounded-full px-3 py-1 hover:bg-pink-50">
+                      {{ 'profile.returns' | translate }}
+                    </button>
+                  }
                 </div>
               </div>
             }

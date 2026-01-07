@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -105,6 +104,8 @@ export class LoginComponent {
                 return 'This email address is already in use.';
             case 'auth/weak-password':
                 return 'Password should be at least 6 characters.';
+            case 'auth/user-disabled':
+                return 'This account has been suspended or is blacklisted.';
             default:
                 return 'An unexpected error occurred. Please try again.';
         }
