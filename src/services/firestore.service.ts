@@ -1,23 +1,24 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
+import { Firestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from '@angular/fire/firestore';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class FirestoreService {
-  constructor() {}
+  private firestore: Firestore = inject(Firestore);
 
-  addProduct(product: any): Promise<any> {
-    console.warn('Firestore is disabled. addProduct did nothing.');
-    return Promise.resolve();
+  // आर्डर सेव करना
+  async addProduct(data: any) {
+    return addDoc(collection(this.firestore, 'orders'), { ...data, createdAt: new Date() });
   }
 
-  async getProducts(): Promise<any[]> {
-    console.warn('Firestore is disabled. getProducts returned empty array.');
-    return Promise.resolve([]);
+  // लिस्ट मंगाना
+  async getProducts(collectionName: string = 'orders') {
+    const q = query(collection(this.firestore, collectionName), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
 
-  saveUser(extra: any = {}): Promise<void> {
-    console.warn('Firestore is disabled. saveUser did nothing.');
-    return Promise.resolve();
+  // अपडेट करना
+  async updateOrder(id: string, data: any) {
+    return updateDoc(doc(this.firestore, 'orders', id), data);
   }
 }
