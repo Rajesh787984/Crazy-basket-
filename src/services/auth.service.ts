@@ -1,39 +1,29 @@
-import { Injectable, signal, inject, Injector } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { Injectable, inject, signal } from '@angular/core';
+import { Auth, GoogleAuthProvider, signInWithPopup, signOut, user } from '@angular/fire/auth';
 import { environment } from '../environments/environment';
-import { StateService } from './state.service';
-import { User as AppUser } from '../models/user.model';
 
-// Mock Firebase User and UserCredential types to avoid breaking dependant components
-export interface MockAuthUser {
-  uid: string;
-  email: string | null;
-  displayName: string | null;
-  photoURL: string | null;
-  emailVerified: boolean;
-  phoneNumber: string | null;
-}
-
-export interface MockUserCredential {
-  user: MockAuthUser;
-}
-
-@Injectable({
-  providedIn: 'root',
-})
+@Injectable({ providedIn: 'root' })
 export class AuthService {
-  // Use Injector to lazily inject StateService and break the circular dependency
-  private injector = inject(Injector);
-  private _stateService?: StateService;
-  private get stateService(): StateService {
-    if (!this._stateService) {
-      this._stateService = this.injector.get(StateService);
-    }
-    return this._stateService;
+  private auth = inject(Auth);
+  currentUser = signal<any>(null);
+
+  constructor() {
+    user(this.auth).subscribe(user => this.currentUser.set(user));
   }
 
-  currentUser = signal<MockAuthUser | null>(null);
+  async googleLogin() {
+    return signInWithPopup(this.auth, new GoogleAuthProvider());
+  }
+
+  async logout() {
+    return signOut(this.auth);
+  }
+
+  isAdmin(): boolean {
+    const u = this.currentUser();
+    return u && environment.adminEmails.includes(u.email);
+  }
+}
 
   constructor() {
     // Defer session restoration to break the circular dependency during instantiation.
