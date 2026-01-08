@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
 import { Firestore, collection, getDocs, doc, deleteDoc } from '@angular/fire/firestore';
@@ -13,66 +13,56 @@ export class AdminProductsComponent implements OnInit {
   stateService = inject(StateService);
   private firestore = inject(Firestore);
 
-  products: any[] = [];
-  loading = true;
+  // ✅ Fix: Array की जगह Signal का इस्तेमाल
+  products = signal<any[]>([]);
+  loading = signal<boolean>(true);
 
   ngOnInit() {
     this.loadProducts();
   }
 
-  // 1. फायरबेस से असली प्रोडक्ट्स मंगाने का कोड
   async loadProducts() {
-    this.loading = true;
+    this.loading.set(true);
     try {
-      const colRef = collection(this.firestore, 'products'); // 'products' फोल्डर चेक करेगा
+      const colRef = collection(this.firestore, 'products');
       const snapshot = await getDocs(colRef);
       
-      this.products = snapshot.docs.map(d => ({
+      const data = snapshot.docs.map(d => ({
         id: d.id,
         ...d.data()
       }));
+      
+      // ✅ Signal Update
+      this.products.set(data);
     } catch (error) {
       console.error('Error loading products:', error);
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 
-  // 2. नया प्रोडक्ट ऐड करने के लिए फॉर्म पर भेजें
   addProduct() {
     this.stateService.navigateToAdminView('product-form');
   }
 
-  // 3. प्रोडक्ट एडिट करने के लिए
   editProduct(product: any) {
     this.stateService.productToEdit.set(product);
     this.stateService.navigateToAdminView('product-form');
   }
 
-  // 4. प्रोडक्ट डिलीट करने का असली कोड
   async deleteProduct(productId: string) {
-    if (confirm('Are you sure you want to delete this product?')) {
+    if (confirm('Are you sure?')) {
       try {
-        const docRef = doc(this.firestore, 'products', productId);
-        await deleteDoc(docRef); // डेटाबेस से उड़ा देगा
-        
-        // लिस्ट को रिफ्रेश करें ताकि डिलीट हुआ प्रोडक्ट हट जाए
+        await deleteDoc(doc(this.firestore, 'products', productId));
         this.loadProducts(); 
-        this.stateService.showToast('Product deleted from Database.');
       } catch (error) {
         console.error('Delete failed:', error);
-        alert('Could not delete product.');
       }
     }
   }
 
+  // ✅ यह फंक्शन अब क्लास के अंदर है (पहले बाहर छूट गया था)
   getInStockCount(product: any): number {
     return product.sizes ? product.sizes.filter((s: any) => s.inStock).length : 0;
-  }
-}
-  }
-
-  getInStockCount(product: Product): number {
-    return product.sizes.filter(s => s.inStock).length;
   }
 }
