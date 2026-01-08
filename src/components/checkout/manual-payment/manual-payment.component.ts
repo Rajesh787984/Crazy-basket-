@@ -2,7 +2,7 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
-import { FirestoreService } from '../../../services/firestore.service'; // सर्विस का सही रास्ता
+import { FirestoreService } from '../../../services/firestore.service';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -10,30 +10,54 @@ import { AuthService } from '../../../services/auth.service';
   standalone: true,
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-      <h3 class="text-xl font-bold text-gray-800 mb-4">Cash on Delivery (COD)</h3>
-      <p class="text-gray-600 mb-6 text-sm">Pay securely with cash when your order is delivered.</p>
+    <div class="p-6 bg-white rounded shadow-md max-w-md mx-auto mt-10">
+      <h2 class="text-xl font-bold mb-4">Cash on Delivery</h2>
+      <input [(ngModel)]="name" placeholder="Full Name" class="w-full border p-2 mb-2 rounded">
+      <input [(ngModel)]="mobile" placeholder="Mobile Number" class="w-full border p-2 mb-2 rounded">
+      <textarea [(ngModel)]="address" placeholder="Address" class="w-full border p-2 mb-4 rounded"></textarea>
+      
+      <button (click)="confirmOrder()" [disabled]="loading" class="w-full bg-rose-600 text-white p-3 rounded font-bold">
+        {{ loading ? 'Processing...' : 'Confirm Order' }}
+      </button>
+    </div>
+  `
+})
+export class ManualPaymentComponent {
+  private firestoreService = inject(FirestoreService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-      <div class="space-y-4 mb-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-          <input [(ngModel)]="name" type="text" class="w-full p-2 border rounded focus:ring-rose-500 focus:border-rose-500" placeholder="Enter name">
-        </div>
-        
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
-          <input [(ngModel)]="mobile" type="text" class="w-full p-2 border rounded focus:ring-rose-500 focus:border-rose-500" placeholder="10-digit mobile number">
-        </div>
+  name = '';
+  mobile = '';
+  address = '';
+  loading = false;
+  totalAmount = 999; // Demo amount
 
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">Delivery Address</label>
-          <textarea [(ngModel)]="address" rows="3" class="w-full p-2 border rounded focus:ring-rose-500 focus:border-rose-500" placeholder="Complete address with pincode"></textarea>
-        </div>
-      </div>
-
-      <div class="bg-gray-50 p-3 rounded mb-6 text-sm flex justify-between font-bold">
-        <span>Total Payable:</span>
-        <span class="text-rose-600">₹{{ totalAmount }}</span>
+  async confirmOrder() {
+    if (!this.name || !this.mobile) return alert('Fill all details');
+    this.loading = true;
+    
+    try {
+      const user = this.authService.currentUser();
+      await this.firestoreService.addProduct({
+        customerName: this.name,
+        customerMobile: this.mobile,
+        shippingAddress: this.address,
+        userId: user?.uid || 'guest',
+        status: 'Pending',
+        totalAmount: this.totalAmount,
+        createdAt: new Date()
+      });
+      alert('Order Placed! 🎉');
+      this.router.navigate(['/home']);
+    } catch (e) {
+      console.error(e);
+      alert('Error placing order');
+    } finally {
+      this.loading = false;
+    }
+  }
+}
       </div>
 
       <button 
