@@ -1,27 +1,55 @@
-
-import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { StateService } from '../../../services/state.service';
-import { Order, OrderStatus } from '../../../models/order.model';
+import { FirestoreService } from '../../../services/firestore.service';
+import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
 
 @Component({
   selector: 'app-admin-orders',
-  templateUrl: './admin-orders.component.html',
+  standalone: true,
   imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  templateUrl: './admin-orders.component.html'
 })
-export class AdminOrdersComponent {
-  stateService: StateService = inject(StateService);
-  orders = this.stateService.orders;
-  
-  orderStatuses: OrderStatus[] = ['Pending Verification', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+export class AdminOrdersComponent implements OnInit {
+  firestoreService = inject(FirestoreService);
+  private firestore = inject(Firestore); // स्टेटस अपडेट करने के लिए
 
-  updateStatus(orderId: string, event: Event) {
-    const newStatus = (event.target as HTMLSelectElement).value as OrderStatus;
-    this.stateService.updateOrderStatus(orderId, newStatus);
+  orders: any[] = [];
+  loading = true;
+  
+  orderStatuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
+
+  ngOnInit() {
+    this.loadOrders();
   }
 
-  printInvoice(orderId: string) {
-    this.stateService.showToast(`Printing invoice for #${orderId} (feature demo).`);
+  async loadOrders() {
+    try {
+      // पिछली बार हमने getProducts को 'orders' लाने के लिए सेट किया था
+      this.orders = await this.firestoreService.getProducts();
+    } catch (error) {
+      console.error('Error loading orders:', error);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  async updateStatus(orderId: string, event: Event) {
+    const newStatus = (event.target as HTMLSelectElement).value;
+    
+    try {
+      // 🔥 सीधे फायरबेस में स्टेटस अपडेट करें
+      const orderRef = doc(this.firestore, 'orders', orderId);
+      await updateDoc(orderRef, { status: newStatus });
+      
+      alert(`Order #${orderId} updated to ${newStatus}`);
+    } catch (error) {
+      console.error('Update failed:', error);
+      alert('Failed to update status');
+    }
+  }
+
+  printInvoice(order: any) {
+    // यह फीचर बाद में बनाएंगे, अभी सिर्फ अलर्ट
+    alert(`Printing Invoice for: ${order.customerName}\nAmount: ₹${order.totalAmount}`);
   }
 }
