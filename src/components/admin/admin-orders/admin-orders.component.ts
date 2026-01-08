@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FirestoreService } from '../../../services/firestore.service';
 import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
@@ -11,10 +11,11 @@ import { Firestore, doc, updateDoc } from '@angular/fire/firestore';
 })
 export class AdminOrdersComponent implements OnInit {
   firestoreService = inject(FirestoreService);
-  private firestore = inject(Firestore); // स्टेटस अपडेट करने के लिए
+  private firestore = inject(Firestore);
 
-  orders: any[] = [];
-  loading = true;
+  // ✅ Fix: Signal Use
+  orders = signal<any[]>([]); 
+  loading = signal<boolean>(true);
   
   orderStatuses = ['Pending', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled'];
 
@@ -24,16 +25,29 @@ export class AdminOrdersComponent implements OnInit {
 
   async loadOrders() {
     try {
-      // पिछली बार हमने getProducts को 'orders' लाने के लिए सेट किया था
-      this.orders = await this.firestoreService.getProducts();
+      const data = await this.firestoreService.getProducts(); // यह orders ही लाएगा
+      this.orders.set(data);
     } catch (error) {
-      console.error('Error loading orders:', error);
+      console.error('Error:', error);
     } finally {
-      this.loading = false;
+      this.loading.set(false);
     }
   }
 
   async updateStatus(orderId: string, event: Event) {
+    const newStatus = (event.target as HTMLSelectElement).value;
+    try {
+      await updateDoc(doc(this.firestore, 'orders', orderId), { status: newStatus });
+      alert('Status Updated');
+    } catch (error) {
+      console.error('Update failed:', error);
+    }
+  }
+
+  printInvoice(order: any) {
+    alert(`Printing for: ${order.customerName}`);
+  }
+}
     const newStatus = (event.target as HTMLSelectElement).value;
     
     try {
