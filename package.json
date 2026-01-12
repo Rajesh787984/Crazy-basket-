@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "ng serve",
-    "build": "ng build",  
+    "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -23,7 +23,8 @@
     "@angular/animations": "^18.0.0",
     "firebase": "^10.12.0",
     "@angular/fire": "^18.0.0",
-    "tailwindcss": "^3.4.3"
+    "tailwindcss": "^3.4.3",
+    "@google/genai": "^0.1.0"
   },
   "devDependencies": {
     "@angular/cli": "^18.0.0",
