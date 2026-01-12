@@ -1,47 +1,58 @@
-
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { StateService } from '../../../services/state.service';
+import { Component, inject } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
+import { FirestoreService } from '../../../services/firestore.service';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-manual-payment',
-  templateUrl: './manual-payment.component.html',
-  imports: [CommonModule, FormsModule, NgOptimizedImage],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+  standalone: true,
+  imports: [CommonModule, FormsModule],
+  template: `
+    <div class="p-6 bg-white rounded shadow-md max-w-md mx-auto mt-10">
+      <h2 class="text-xl font-bold mb-4">Cash on Delivery</h2>
+      <input [(ngModel)]="name" placeholder="Name" class="w-full border p-2 mb-2 rounded">
+      <input [(ngModel)]="mobile" placeholder="Mobile" class="w-full border p-2 mb-2 rounded">
+      <textarea [(ngModel)]="address" placeholder="Address" class="w-full border p-2 mb-4 rounded"></textarea>
+      
+      <button (click)="confirmOrder()" [disabled]="loading" class="w-full bg-blue-600 text-white font-bold p-3 rounded">
+        {{ loading ? 'Processing...' : 'Confirm Order' }}
+      </button>
+    </div>
+  `
 })
 export class ManualPaymentComponent {
-  stateService: StateService = inject(StateService);
-  cartTotal = this.stateService.cartTotal;
-  contactInfo = this.stateService.contactInfo;
-  
-  transactionId = signal('');
+  private firestoreService = inject(FirestoreService);
+  private authService = inject(AuthService);
+  private router = inject(Router);
 
-  payWithUpi(appName: string) {
-    const upiId = this.contactInfo().upiId;
-    const amount = this.cartTotal();
-    const storeName = 'Crazy Basket';
-    
-    if (!upiId) {
-      this.stateService.showToast('UPI ID is not configured by the administrator.');
-      return;
+  name = ''; mobile = ''; address = ''; loading = false;
+
+  async confirmOrder() {
+    if (!this.name || !this.mobile) return alert('Fill details');
+    this.loading = true;
+    try {
+      const user = this.authService.currentUser();
+      await this.firestoreService.addProduct({
+        collectionName: 'orders', // Firestore में orders नाम से सेव होगा
+        data: {
+          customerName: this.name,
+          customerMobile: this.mobile,
+          shippingAddress: this.address,
+          userId: user?.uid || 'guest',
+          status: 'Pending',
+          totalAmount: 999,
+          createdAt: new Date().toISOString()
+        }
+      });
+      alert('Order Placed! 🎉');
+      this.router.navigate(['/home']);
+    } catch (e) {
+      console.error(e);
+      alert('Order Failed');
+    } finally {
+      this.loading = false;
     }
-
-    let upiUrl = `upi://pay?pa=${upiId}&pn=${encodeURIComponent(storeName)}&am=${amount}&cu=INR`;
-    
-    // Using the generic URL is often the most compatible approach
-    // as specific app schemes can change. This is for demonstration.
-    // Example: upiUrl = `phonepe://pay?pa=...`;
-    
-    window.location.href = upiUrl;
-  }
-
-  verifyAndPlaceOrder() {
-    const utr = this.transactionId().trim();
-    if (!utr || utr.length < 12 || !/^\d+$/.test(utr)) {
-      this.stateService.showToast('Please enter a valid 12-digit Transaction ID/UTR.');
-      return;
-    }
-    this.stateService.placeManualUpiOrder(utr);
   }
 }
