@@ -7,9 +7,9 @@ import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-header',
-  standalone: true,  // ✅ यह लाइन बहुत ज़रूरी है
-  imports: [CommonModule, FormsModule, RouterModule, NgOptimizedImage],
-  templateUrl: './header.component.html'
+  templateUrl: './header.component.html',
+  standalone: true, // ✅ यह सबसे ज़रूरी है
+  imports: [CommonModule, FormsModule, RouterModule, NgOptimizedImage], 
 })
 export class HeaderComponent {
   stateService = inject(StateService);
@@ -17,9 +17,15 @@ export class HeaderComponent {
   
   searchQuery = '';
 
+  // सर्च बार के लिए लॉजिक
   onSearch() {
     if (this.searchQuery.trim()) {
       this.stateService.navigateTo('productList', { search: this.searchQuery });
     }
+  }
+
+  // अगर यूजर लॉगआउट करना चाहे
+  logout() {
+    this.authService.logout();
   }
 }
