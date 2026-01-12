@@ -1,41 +1,74 @@
 import { Injectable } from '@angular/core';
-import { GoogleGenAI, GenerateContentResult } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
+import { Product } from '../models/product.model';
 import { environment } from '../environments/environment';
 
+export interface RecommendationResponse {
+  category: string;
+  productId: string;
+  reasoning: string;
+}
+
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class GeminiService {
-  private ai: any;
+  private ai: any; // Type 'any' use kar rahe hain taaki version issue na ho
 
   constructor() {
-    try {
-      // API Key को environment फाइल से ले रहे हैं
-      if (environment.firebase && environment.firebase.apiKey) {
-        this.ai = new GoogleGenAI({ apiKey: environment.firebase.apiKey });
-      } else {
-        console.warn('Gemini API key not found in environment');
+    // Environment file se API Key lenge
+    const apiKey = environment.firebase ? environment.firebase.apiKey : '';
+    
+    if (apiKey) {
+      try {
+        this.ai = new GoogleGenAI({ apiKey: apiKey });
+      } catch (error) {
+        console.error('Gemini Init Error:', error);
       }
-    } catch (e) {
-      console.error('Gemini init error', e);
     }
   }
 
-  async generateText(prompt: string): Promise<string> {
-    if (!this.ai) return 'AI Service not initialized';
-    try {
-      const model = this.ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
-      const result: GenerateContentResult = await model.generateContent(prompt);
-      return result.response.text();
-    } catch (error) {
-      console.error('Gemini Error:', error);
-      return 'Error generating text';
+  async getOutfitRecommendations(
+    occasion: string,
+    products: Product[],
+    image?: { mimeType: string; data: string }
+  ): Promise<RecommendationResponse[]> {
+    
+    if (!this.ai) return [];
+
+    // Product list ko simplify kar rahe hain
+    const productCatalog = products.map(p => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price
+    }));
+
+    let prompt = `Recommend an outfit for: "${occasion}". 
+    From this catalog: ${JSON.stringify(productCatalog)}. 
+    Return strictly JSON array.`;
+
+    const contents: any = { parts: [{ text: prompt }] };
+
+    if (image) {
+       contents.parts.push({
+          inlineData: { mimeType: image.mimeType, data: image.data }
+       });
     }
-  }
-  
-  // अगर आपको outfit recommendations वाला function भी चाहिए तो वो भी यहाँ रख सकते हैं
-  async getOutfitRecommendations(occasion: string, products: any[], image?: any): Promise<any[]> {
-      // ... (पुराना लॉजिक यहाँ कॉपी कर सकते हैं, बस API Key का ध्यान रखें)
+
+    try {
+      const response: any = await this.ai.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents,
+        config: { responseMimeType: 'application/json' }
+      });
+
+      const jsonStr = response.text().trim();
+      return JSON.parse(jsonStr) as RecommendationResponse[];
+
+    } catch (error) {
+      console.error('Gemini API Error:', error);
       return [];
+    }
   }
 }
