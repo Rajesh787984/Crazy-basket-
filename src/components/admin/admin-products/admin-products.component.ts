@@ -1,68 +1,42 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
+import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../../services/state.service';
-import { Firestore, collection, getDocs, doc, deleteDoc } from '@angular/fire/firestore';
+import { ProductService } from '../../../services/product.service';
+import { Product } from '../../../models/product.model';
 
 @Component({
   selector: 'app-admin-products',
-  standalone: true,
-  imports: [CommonModule],
-  templateUrl: './admin-products.component.html'
+  templateUrl: './admin-products.component.html',
+  imports: [CommonModule, NgOptimizedImage],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminProductsComponent implements OnInit {
-  stateService = inject(StateService);
-  private firestore = inject(Firestore);
+export class AdminProductsComponent {
+  stateService: StateService = inject(StateService);
+  productService: ProductService = inject(ProductService);
 
-  // ✅ Fix: Array की जगह Signal का इस्तेमाल
-  products = signal<any[]>([]);
-  loading = signal<boolean>(true);
-
-  ngOnInit() {
-    this.loadProducts();
-  }
-
-  async loadProducts() {
-    this.loading.set(true);
-    try {
-      const colRef = collection(this.firestore, 'products');
-      const snapshot = await getDocs(colRef);
-      
-      const data = snapshot.docs.map(d => ({
-        id: d.id,
-        ...d.data()
-      }));
-      
-      // ✅ Signal Update
-      this.products.set(data);
-    } catch (error) {
-      console.error('Error loading products:', error);
-    } finally {
-      this.loading.set(false);
-    }
-  }
+  // We need to get products directly from the service to show all of them
+  products = computed(() => this.productService.getAllProducts());
 
   addProduct() {
     this.stateService.navigateToAdminView('product-form');
   }
 
-  editProduct(product: any) {
+  editProduct(product: Product) {
     this.stateService.productToEdit.set(product);
     this.stateService.navigateToAdminView('product-form');
   }
 
-  async deleteProduct(productId: string) {
-    if (confirm('Are you sure?')) {
-      try {
-        await deleteDoc(doc(this.firestore, 'products', productId));
-        this.loadProducts(); 
-      } catch (error) {
-        console.error('Delete failed:', error);
-      }
+  deleteProduct(productId: string) {
+    if (confirm('Are you sure you want to delete this product?')) {
+      this.productService.deleteProduct(productId);
+      // Force a re-computation by getting the signal again
+      this.products = computed(() => this.productService.getAllProducts());
+      this.stateService.showToast('Product deleted successfully.');
     }
   }
 
-  // ✅ यह फंक्शन अब क्लास के अंदर है (पहले बाहर छूट गया था)
-  getInStockCount(product: any): number {
-    return product.sizes ? product.sizes.filter((s: any) => s.inStock).length : 0;
+  getInStockCount(product: Product): number {
+    return product.sizes.filter(s => s.inStock).length;
   }
 }

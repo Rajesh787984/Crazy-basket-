@@ -1,67 +1,66 @@
-
-<div class="p-4 md:p-8 bg-gray-50 min-h-full">
+<div class="p-4 md:p-8 bg-gray-50 dark:bg-gray-900 min-h-full">
   @if(currentUser(); as user) {
-    <div class="max-w-2xl mx-auto bg-white p-6 md:p-8 rounded-lg shadow-sm">
+    <div class="max-w-2xl mx-auto bg-white dark:bg-gray-800 p-6 md:p-8 rounded-lg shadow-sm">
         <div class="text-center md:text-left mb-8">
-            <h1 class="text-2xl font-bold text-gray-800 flex items-center justify-center md:justify-start">
+            <h1 class="text-2xl font-bold text-gray-800 dark:text-gray-100 flex items-center justify-center md:justify-start">
                 Partner Income Program <span class="text-2xl ml-2">💰</span>
             </h1>
-            <p class="text-gray-600 mt-1">Earn real cash commissions when friends shop.</p>
+            <p class="text-gray-600 dark:text-gray-400 mt-1">Earn real cash commissions when friends shop.</p>
         </div>
 
         <div class="relative md:pl-8">
             <!-- Connecting line for desktop -->
-            <div class="absolute left-8 top-8 h-[calc(100%-4rem)] w-0.5 bg-gray-200 hidden md:block"></div>
+            <div class="absolute left-8 top-8 h-[calc(100%-4rem)] w-0.5 bg-gray-200 dark:bg-gray-700 hidden md:block"></div>
             
             <div class="space-y-10">
                 <!-- Step 1: Invite -->
                 <div class="relative flex items-start space-x-4">
-                    <div class="bg-pink-100 text-pink-600 rounded-full h-16 w-16 flex items-center justify-center text-2xl z-10 flex-shrink-0">
+                    <div class="bg-pink-100 text-pink-600 dark:bg-pink-900/50 dark:text-pink-400 rounded-full h-16 w-16 flex items-center justify-center text-2xl z-10 flex-shrink-0">
                         <span>💌</span>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg text-gray-900">1. Invite Your Friends</h3>
-                        <p class="text-gray-600 mt-1">Share your unique referral code. When they sign up using your code, they become part of your network!</p>
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-gray-100">1. Invite Your Friends</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mt-1">Share your unique referral code. When they sign up using your code, they become part of your network!</p>
                     </div>
                 </div>
                 
                 <!-- Step 2: First Order -->
                 <div class="relative flex items-start space-x-4">
-                    <div class="bg-blue-100 text-blue-600 rounded-full h-16 w-16 flex items-center justify-center text-2xl z-10 flex-shrink-0">
+                    <div class="bg-blue-100 text-blue-600 dark:bg-blue-900/50 dark:text-blue-400 rounded-full h-16 w-16 flex items-center justify-center text-2xl z-10 flex-shrink-0">
                         <span>🛍️</span>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg text-gray-900">2. They Make Their First Purchase</h3>
-                        <p class="text-gray-600 mt-1">When their first order is delivered, you earn a whopping <span class="font-bold text-blue-600">10% commission</span> on the order value.</p>
-                        <p class="text-sm text-gray-500 mt-2 p-3 bg-blue-50 rounded-md border border-blue-100">Example: If their order is ₹1000, you get ₹100 in your wallet!</p>
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-gray-100">2. They Make Their First Purchase</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mt-1">When their first order is delivered, you earn a whopping <span class="font-bold text-blue-600 dark:text-blue-400">10% commission</span> on the order value.</p>
+                        <p class="text-sm text-gray-500 dark:text-gray-300 mt-2 p-3 bg-blue-50 dark:bg-gray-700 rounded-md border border-blue-100 dark:border-blue-900">Example: If their order is ₹1000, you get ₹100 in your wallet!</p>
                     </div>
                 </div>
 
                 <!-- Step 3: Lifetime Earnings -->
                 <div class="relative flex items-start space-x-4">
-                    <div class="bg-green-100 text-green-600 rounded-full h-16 w-16 flex items-center justify-center text-2xl z-10 flex-shrink-0">
+                    <div class="bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400 rounded-full h-16 w-16 flex items-center justify-center text-2xl z-10 flex-shrink-0">
                         <span>🔄</span>
                     </div>
                     <div>
-                        <h3 class="font-bold text-lg text-gray-900">3. Earn for a Lifetime</h3>
-                        <p class="text-gray-600 mt-1">The rewards don't stop! You'll earn a <span class="font-bold text-green-600">5% commission</span> on ALL future orders they place, forever.</p>
+                        <h3 class="font-bold text-lg text-gray-900 dark:text-gray-100">3. Earn for a Lifetime</h3>
+                        <p class="text-gray-600 dark:text-gray-400 mt-1">The rewards don't stop! You'll earn a <span class="font-bold text-green-600 dark:text-green-400">5% commission</span> on ALL future orders they place, forever.</p>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="mt-10 pt-6 border-t">
-            <p class="text-sm font-semibold mb-2 text-gray-700">Your Unique Invite Link:</p>
-            <div class="flex items-center bg-gray-100 border border-gray-300 rounded-lg p-2">
-                <span class="text-sm text-gray-800 px-2 truncate">crazybasket.com/ref/{{ user.referralCode }}</span>
+        <div class="mt-10 pt-6 border-t dark:border-gray-700">
+            <p class="text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">Your Unique Invite Link:</p>
+            <div class="flex items-center bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg p-2">
+                <span class="text-sm text-gray-800 dark:text-gray-200 px-2 truncate">crazybasket.com/ref/{{ user.referralCode }}</span>
                 <button (click)="copyCode()" class="ml-auto bg-pink-600 text-white px-4 py-2 rounded-md text-sm font-bold hover:bg-pink-700 transition-colors">COPY</button>
             </div>
         </div>
     </div>
   } @else {
     <div class="text-center py-20">
-      <h2 class="text-xl font-bold">Access the Partner Program</h2>
-      <p class="text-gray-500 mt-1">Please log in to view your unique invite link and start earning!</p>
+      <h2 class="text-xl font-bold dark:text-white">Access the Partner Program</h2>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Please log in to view your unique invite link and start earning!</p>
     </div>
   }
 </div>

@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../../services/state.service';
 import { Order, OrderItem, ReturnStatus, User } from '../../../models';
 
@@ -12,7 +12,7 @@ interface ReturnRequest {
 @Component({
   selector: 'app-admin-returns',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgOptimizedImage],
   templateUrl: './admin-returns.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

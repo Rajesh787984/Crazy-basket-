@@ -1,55 +1,65 @@
-<div 
-  class="fixed lg:relative inset-y-0 left-0 w-64 bg-white shadow-2xl z-40 transform transition-transform duration-300 ease-in-out
-         lg:transform-none lg:shadow-none lg:border-r lg:h-screen flex-shrink-0"
+<aside 
+  class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-xl z-40 transform transition-transform duration-300 ease-in-out"
   [class.translate-x-0]="isOpen()"
-  [class.-translate-x-full]="!isOpen()"
-  [class.lg:translate-x-0]="true">
+  [class.-translate-x-full]="!isOpen()">
   
-  <div class="h-full overflow-y-auto lg:sticky lg:top-0">
-    <div class="p-4 border-b">
+  <div class="h-full overflow-y-auto pt-24">
+    <div class="p-4 border-b border-gray-200 dark:border-gray-700">
       @if(currentUser(); as user) {
         <div class="flex items-center space-x-3">
           <img [ngSrc]="user.photoUrl || 'https://picsum.photos/id/237/50/50'" alt="Profile" width="48" height="48" class="h-12 w-12 rounded-full object-cover">
           <div>
-            <div class="font-semibold">{{ user.name }}</div>
-            <div class="text-sm text-gray-500 truncate">{{ user.email }}</div>
+            <div class="font-semibold dark:text-gray-100">{{ user.name }}</div>
+            <div class="text-sm text-gray-500 dark:text-gray-400 truncate">{{ user.email }}</div>
           </div>
         </div>
       } @else {
         <div (click)="login()" class="flex items-center space-x-3 cursor-pointer">
           <img ngSrc="https://picsum.photos/id/237/50/50" alt="Profile" width="48" height="48" class="h-12 w-12 rounded-full">
           <div>
-            <div class="font-semibold">Log in / Sign up</div>
+            <div class="font-semibold dark:text-gray-100">Log in / Sign up</div>
           </div>
         </div>
       }
     </div>
 
     <nav class="py-4">
+      <a (click)="stateService.navigateTo('profile')" class="flex items-center justify-between px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+        <span class="font-semibold">Profile</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
+      <a (click)="stateService.navigateTo('orders')" class="flex items-center justify-between px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+        <span class="font-semibold">Orders</span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </a>
       @for(category of categories(); track category.name) {
-        <a (click)="selectCategory(category.name)" class="flex items-center justify-between px-4 py-3 text-gray-700 hover:bg-gray-100 cursor-pointer">
+        <a (click)="selectCategory(category.name)" class="flex items-center justify-between px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
           <span class="font-semibold">{{ category.name }}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </a>
       }
     </nav>
 
-    <div class="border-t mt-4 pt-4 px-4 text-sm text-gray-600">
-      <a (click)="stateService.navigateTo('partner-program')" class="block py-2 hover:text-pink-500 cursor-pointer">Partner Program</a>
-      <a (click)="stateService.navigateTo('outfitRecommender')" class="block py-2 hover:text-pink-500 cursor-pointer">AI Style Helper</a>
-      <a (click)="stateService.navigateTo('contact-us')" class="block py-2 hover:text-pink-500 cursor-pointer">Contact Us</a>
-      <a (click)="stateService.navigateTo('faq')" class="block py-2 hover:text-pink-500 cursor-pointer">FAQs</a>
+    <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4 px-4 text-sm text-gray-600 dark:text-gray-400">
+      <a (click)="stateService.navigateTo('partner-program')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">Partner Program</a>
+      <a (click)="stateService.navigateTo('outfitRecommender')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">AI Style Helper</a>
+      <a (click)="stateService.navigateTo('contact-us')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">Contact Us</a>
+      <a (click)="stateService.navigateTo('faq')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">FAQs</a>
     </div>
 
-    <div class="p-4 mt-8 text-center text-xs text-gray-400">
+    <div class="p-4 mt-8 text-center text-xs text-gray-400 dark:text-gray-500">
         <p>&copy; {{ currentYear }} Crazy Basket.</p>
         <p>All Rights Reserved.</p>
     </div>
   </div>
-</div>
+</aside>
 
 @if (isOpen()) {
-  <div (click)="stateService.closeSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"></div>
+  <div (click)="stateService.closeSidebar()" class="fixed inset-0 bg-black bg-opacity-50 z-30"></div>
 }

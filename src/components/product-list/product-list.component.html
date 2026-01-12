@@ -1,35 +1,4 @@
 <div class="flex">
-  <!-- Filter Sidebar (Desktop) -->
-  <aside class="hidden lg:block w-64 p-4 border-r">
-    <h3 class="text-lg font-bold mb-4">FILTERS</h3>
-    <div class="space-y-6">
-      <!-- Price -->
-      <div>
-        <h4 class="font-semibold mb-2">PRICE</h4>
-        @for(range of priceRanges; track range.value) {
-          <div class="flex items-center">
-            <input type="checkbox" [id]="'price-desk-'+range.value" [value]="range.value" (change)="toggleFilter('priceRanges', range.value)" [checked]="localFilters().priceRanges.includes(range.value)" class="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500">
-            <label [for]="'price-desk-'+range.value" class="ml-3 min-w-0 flex-1 text-gray-500">{{ range.label }}</label>
-          </div>
-        }
-      </div>
-      <!-- Discount -->
-      <div>
-        <h4 class="font-semibold mb-2">DISCOUNT RANGE</h4>
-        @for(discount of discounts; track discount) {
-          <div class="flex items-center">
-            <input type="checkbox" [id]="'discount-desk-'+discount" [value]="discount" (change)="toggleFilter('discounts', discount)" [checked]="localFilters().discounts.includes(discount)" class="h-4 w-4 rounded border-gray-300 text-pink-600 focus:ring-pink-500">
-            <label [for]="'discount-desk-'+discount" class="ml-3 min-w-0 flex-1 text-gray-500">{{ discount }}% and above</label>
-          </div>
-        }
-      </div>
-    </div>
-     <div class="mt-8 flex space-x-2">
-        <button (click)="clearFilters()" class="w-1/2 py-2 border border-gray-300 rounded font-bold">CLEAR</button>
-        <button (click)="applyFilters()" class="w-1/2 py-2 bg-pink-500 text-white rounded font-bold">APPLY</button>
-    </div>
-  </aside>
-
   <!-- Product Grid -->
   <div class="flex-1 p-2">
     <div class="mb-2 px-2 flex justify-between items-center">
@@ -37,8 +6,14 @@
         <h1 class="text-lg font-bold">{{ pageTitle() }}</h1>
         <p class="text-sm text-gray-500">{{ filteredAndSortedProducts().length }} Items</p>
       </div>
-      <div class="hidden lg:block">
-        <select (change)="onSortChange($event)" class="border rounded-md p-2">
+      <div class="hidden lg:flex items-center space-x-4">
+        <button (click)="showFilters.set(true)" class="border dark:border-gray-600 rounded-md p-2 flex items-center font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L12 12.414V19l-4 2v-8.586L3.293 6.707A1 1 0 013 6V4z"></path>
+            </svg>
+            <span>FILTER</span>
+        </button>
+        <select (change)="onSortChange($event)" class="border dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-800">
           <option value="recommended">Recommended</option>
           <option value="price_asc">Price: Low to High</option>
           <option value="price_desc">Price: High to Low</option>
@@ -49,10 +24,16 @@
 
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
       @for(product of filteredAndSortedProducts(); track product.id; let i = $index) {
-        <div class="bg-white rounded-lg overflow-hidden cursor-pointer group border flex flex-col relative">
-          <div (click)="viewProduct(product.id)" class="relative">
+        <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden group border dark:border-gray-700 flex flex-col relative">
+          <div (click)="viewProduct(product.id)" class="relative cursor-pointer">
+             <!-- Quick View Overlay -->
+            <div class="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity duration-300 flex items-center justify-center z-10">
+              <button (click)="openQuickView(product.id, $event)" class="bg-white text-gray-800 font-bold py-2 px-4 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-sm">
+                Quick View
+              </button>
+            </div>
             <img [ngSrc]="product.images[0]" [alt]="product.name + ' by ' + product.brand" width="300" height="400" class="w-full aspect-[3/4] object-cover" [priority]="i < 2">
-            <div class="absolute bottom-2 left-2 bg-white/80 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center">
+            <div class="absolute bottom-2 left-2 bg-white/80 dark:bg-gray-900/70 backdrop-blur-sm rounded-full px-2 py-1 text-xs font-semibold flex items-center text-gray-800 dark:text-gray-100">
               {{ product.rating }} ★ | {{ formatReviews(product.reviews) }}
             </div>
             @if(stateService.isB2B() && product.b2bPrice) {
@@ -65,7 +46,7 @@
             }
           </div>
            <!-- Wishlist Button -->
-          <button (click)="stateService.toggleWishlist(product.id); $event.stopPropagation()" class="absolute top-2 right-2 z-10 bg-white/70 backdrop-blur-sm rounded-full p-2 text-gray-700 hover:text-pink-500 transition-colors">
+          <button (click)="stateService.toggleWishlist(product.id); $event.stopPropagation()" class="absolute top-2 right-2 z-10 bg-white/70 dark:bg-gray-900/70 backdrop-blur-sm rounded-full p-2.5 text-gray-700 dark:text-gray-300 hover:text-pink-500 dark:hover:text-pink-400 transition-colors">
             @if(stateService.wishlist().has(product.id)) {
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-pink-500" viewBox="0 0 20 20" fill="currentColor">
                 <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
@@ -76,26 +57,28 @@
               </svg>
             }
           </button>
-          <div class="p-2 flex-grow">
-            <h3 class="font-bold truncate text-sm">{{ product.name }}</h3>
+          <div (click)="viewProduct(product.id)" class="p-2 flex-grow cursor-pointer">
+            <h3 class="font-bold truncate text-sm text-gray-800 dark:text-gray-100">{{ product.name }}</h3>
             <div class="flex items-center space-x-2 mt-1">
               @if(isSaleActive(product) && product.flashSale) {
                 <p class="font-bold text-red-600">₹{{ product.flashSale.price }}</p>
-                <p class="font-bold text-xs text-gray-500 line-through">₹{{ product.price }}</p>
+                <p class="font-bold text-xs text-gray-500 dark:text-gray-400 line-through">₹{{ product.price }}</p>
               } @else {
-                <p class="font-bold">₹{{ product.displayPrice }}</p>
+                <p class="font-bold text-gray-900 dark:text-white">₹{{ product.displayPrice }}</p>
                 @if(product.discount > 0 && product.displayPrice !== product.originalPrice) {
-                  <p class="text-xs text-gray-500 line-through">₹{{ product.originalPrice }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400 line-through">₹{{ product.originalPrice }}</p>
                 }
               }
             </div>
           </div>
            <button (click)="stateService.toggleComparison(product.id)" 
-                  class="w-full text-center py-2 font-bold text-xs border-t transition-colors"
+                  class="w-full text-center py-2 font-bold text-xs border-t dark:border-gray-700 transition-colors"
                   [class.bg-pink-500]="stateService.comparisonList().includes(product.id)"
                   [class.text-white]="stateService.comparisonList().includes(product.id)"
                   [class.text-gray-600]="!stateService.comparisonList().includes(product.id)"
-                  [class.hover:bg-gray-100]="!stateService.comparisonList().includes(product.id)">
+                  [class.dark:text-gray-300]="!stateService.comparisonList().includes(product.id)"
+                  [class.hover:bg-gray-100]="!stateService.comparisonList().includes(product.id)"
+                  [class.dark:hover:bg-gray-700]="!stateService.comparisonList().includes(product.id)">
               {{ stateService.comparisonList().includes(product.id) ? '✓ COMPARING' : 'COMPARE' }}
             </button>
         </div>
@@ -121,10 +104,10 @@
   <button (click)="showFilters.set(true)" class="w-1/2 py-4 text-center font-bold">FILTER</button>
 </div>
 
-<!-- Filter Modal for Mobile -->
+<!-- Filter Modal for Mobile & Desktop -->
 @if(showFilters()) {
-  <div class="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" (click)="showFilters.set(false)">
-    <div class="absolute inset-y-0 right-0 w-4/5 bg-white shadow-xl p-4 flex flex-col" (click)="$event.stopPropagation()">
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-40" (click)="showFilters.set(false)">
+    <div class="absolute inset-y-0 right-0 w-4/5 sm:w-96 bg-white shadow-xl p-4 flex flex-col" (click)="$event.stopPropagation()">
       <div class="flex justify-between items-center border-b pb-4">
         <h3 class="text-lg font-bold">FILTERS</h3>
         <button (click)="showFilters.set(false)">
@@ -156,6 +139,84 @@
       <div class="sticky bottom-0 bg-white py-4 border-t flex space-x-2">
         <button (click)="clearFilters()" class="w-1/2 py-3 border border-gray-300 rounded font-bold">CLEAR</button>
         <button (click)="applyFilters()" class="w-1/2 py-3 bg-pink-500 text-white rounded font-bold">APPLY</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Quick View Modal -->
+@if(quickViewProduct(); as p) {
+  <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" (click)="closeQuickView()">
+    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 h-[90vh] lg:h-auto max-h-[600px] flex flex-col" (click)="$event.stopPropagation()">
+      <button (click)="closeQuickView()" class="absolute top-2 right-2 bg-gray-100 rounded-full p-2 z-10 hover:bg-gray-200">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+      </button>
+      <div class="flex-grow p-4 sm:p-6 overflow-y-auto">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Image Gallery -->
+          <div>
+            <div class="relative aspect-[3/4] mb-4 bg-gray-100 rounded-lg">
+              <img [src]="p.images[quickViewActiveImageIndex()]" [alt]="p.name" class="w-full h-full object-contain">
+            </div>
+            <div class="flex space-x-2 justify-center">
+              @for(image of p.images; track image; let i = $index) {
+                <img (click)="setQuickViewImage(i)" [src]="image" [alt]="'Thumbnail ' + (i + 1)" 
+                    class="w-16 h-20 object-cover rounded-md cursor-pointer border-2"
+                    [class.border-pink-500]="i === quickViewActiveImageIndex()"
+                    [class.border-transparent]="i !== quickViewActiveImageIndex()">
+              }
+            </div>
+          </div>
+          <!-- Product Info -->
+          <div class="flex flex-col">
+            <h1 class="text-2xl font-bold">{{ p.brand }}</h1>
+            <p class="text-gray-500 text-lg">{{ p.name }}</p>
+            
+            <div class="flex items-baseline space-x-2 mt-2">
+              <p class="text-2xl font-bold">₹{{ p.displayPrice }}</p>
+              @if(p.discount > 0) {
+                <p class="text-md text-gray-500 line-through">MRP ₹{{ p.originalPrice }}</p>
+                <p class="text-md text-orange-500 font-bold">({{ p.discount }}% OFF)</p>
+              }
+            </div>
+            <p class="text-xs text-teal-600 font-semibold mt-1">inclusive of all taxes</p>
+
+            <!-- Size Selection -->
+            <div class="mt-6">
+              <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg">Select Size</h3>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-2">
+                @for(size of p.sizes; track size.name) {
+                  <button (click)="selectQuickViewSize(size.name)" 
+                          [disabled]="!size.inStock"
+                          class="h-10 w-10 border rounded-md font-bold flex items-center justify-center transition-colors relative text-sm" 
+                          [class.bg-pink-500]="quickViewSelectedSize() === size.name" 
+                          [class.text-white]="quickViewSelectedSize() === size.name"
+                          [class.border-pink-500]="quickViewSelectedSize() === size.name"
+                          [class.bg-gray-100]="!size.inStock"
+                          [class.text-gray-400]="!size.inStock"
+                          [class.cursor-not-allowed]="!size.inStock">
+                    {{ size.name }}
+                    @if(!size.inStock) {
+                      <span class="absolute top-1/2 left-0 w-full h-0.5 bg-gray-400 transform -rotate-45"></span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+            
+            <div class="mt-auto pt-6 space-y-3">
+              <button (click)="addToBagFromQuickView()" class="w-full py-3 bg-pink-500 text-white rounded-md font-bold flex items-center justify-center hover:bg-pink-600">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                ADD TO BAG
+              </button>
+              <button (click)="viewFullDetails()" class="w-full text-center py-2 font-bold text-gray-700 border bg-white rounded-lg hover:bg-gray-50">
+                View Full Details
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

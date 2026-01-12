@@ -1,17 +1,17 @@
-<div class="bg-gray-50">
+<div class="">
   @for(section of homePageSections(); track section) {
     @switch (section) {
       @case ('categories') {
         <!-- Shop by Category -->
-        <div class="p-4">
-          <h2 class="text-xl font-bold mb-4 text-gray-800">SHOP BY CATEGORY</h2>
+        <div class="p-4 lg:hidden">
+          <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">SHOP BY CATEGORY</h2>
           <div class="flex space-x-4 overflow-x-auto pb-2 -mx-4 px-4">
             @for(category of homeCategories(); track category.name; let i = $index) {
               <div (click)="selectCategory(category.name)" class="flex-shrink-0 w-14 text-center cursor-pointer group">
                 <div class="w-14 h-14 rounded-full overflow-hidden shadow-md group-hover:shadow-lg transition-shadow transform group-hover:scale-105 duration-300" [class]="category.bgColor">
                   <img [ngSrc]="category.img" [alt]="category.name" width="56" height="56" class="w-full h-full object-cover" [priority]="i < 5">
                 </div>
-                <p class="mt-2 font-semibold text-xs text-gray-700">{{ category.name }}</p>
+                <p class="mt-2 font-semibold text-xs text-gray-700 dark:text-gray-300">{{ category.name }}</p>
               </div>
             }
           </div>
@@ -22,7 +22,7 @@
         @if(smallBanner(); as banner) {
           <div class="px-4 pb-4">
             <div (click)="onBannerClick(banner)" [class.cursor-pointer]="banner.productId">
-              <img [ngSrc]="banner.img" [alt]="banner.title" width="1200" height="200" class="w-full h-auto rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <img [ngSrc]="banner.img" [alt]="banner.title" width="1200" height="200" class="w-full h-auto rounded-lg shadow-md">
             </div>
           </div>
         }
@@ -36,7 +36,7 @@
                 [class.opacity-0]="activeSlide() !== i"
                 [class.cursor-pointer]="slide.productId"
                 (click)="onBannerClick(slide)">
-              <img [ngSrc]="slide.img" fill [priority]="i === 0" class="w-full h-full object-cover" [alt]="slide.title">
+              <img [ngSrc]="slide.img" fill priority class="w-full h-full object-cover" [alt]="slide.title">
               <div class="absolute inset-0 bg-black/30 flex flex-col items-center justify-center text-white p-4 text-center">
                 <h2 class="text-3xl md:text-5xl font-extrabold text-shadow">{{ slide.title }}</h2>
                 <p class="mt-2 text-lg md:text-2xl font-semibold text-shadow">{{ slide.subtitle }}</p>
@@ -57,13 +57,13 @@
       @case ('deals') {
         <!-- Top Deals -->
         <div class="p-4">
-          <h2 class="text-xl font-bold mb-4 text-gray-800">TOP DEALS</h2>
+          <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">TOP DEALS</h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             @for(deal of topDeals; track deal.title; let i = $index) {
               <div (click)="selectCategory(deal.category === 'Men' ? 'Men' : 'Women')" class="cursor-pointer group">
                 <img [ngSrc]="deal.img" [alt]="deal.title" width="400" height="300" class="w-full h-auto rounded-lg shadow-md group-hover:shadow-xl transition-shadow transform group-hover:scale-105 duration-300" [priority]="i < 2">
-                <h3 class="font-bold mt-2 text-gray-700">{{ deal.title }}</h3>
-                <p class="text-sm text-green-600 font-semibold">{{ deal.discount }}</p>
+                <h3 class="font-bold mt-2 text-gray-700 dark:text-gray-200">{{ deal.title }}</h3>
+                <p class="text-sm text-green-600 dark:text-green-400 font-semibold">{{ deal.discount }}</p>
               </div>
             }
           </div>
@@ -71,20 +71,20 @@
       }
       @case ('trending') {
         <!-- Trending Products -->
-        <div class="p-4">
-          <h2 class="text-xl font-bold mb-4 text-gray-800">TRENDING FOR YOU</h2>
+        <div class="px-4 pb-4">
+          <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">TRENDING FOR YOU</h2>
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
             @for(product of featuredProducts(); track product.id; let i = $index) {
-              <div (click)="viewProduct(product.id)" class="bg-white rounded-lg overflow-hidden cursor-pointer group border hover:shadow-xl transition-shadow duration-300">
+              <div (click)="viewProduct(product.id)" class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer group border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
                 <div class="relative">
                   <img [ngSrc]="product.images[0]" [alt]="product.name" width="300" height="400" class="w-full aspect-[3/4] object-cover" [priority]="i < 2">
                 </div>
                 <div class="p-2">
-                  <h3 class="font-bold truncate text-gray-800">{{ product.name }}</h3>
+                  <h3 class="font-bold truncate text-gray-800 dark:text-gray-100">{{ product.name }}</h3>
                   <div class="flex items-center space-x-2 mt-1">
-                    <p class="font-bold text-gray-900">₹{{ product.price }}</p>
+                    <p class="font-bold text-gray-900 dark:text-white">₹{{ product.price }}</p>
                     @if(product.discount > 0) {
-                      <p class="text-xs text-gray-500 line-through">₹{{ product.originalPrice }}</p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 line-through">₹{{ product.originalPrice }}</p>
                       <p class="text-xs text-orange-500 font-semibold">({{ product.discount }}% OFF)</p>
                     }
                   </div>

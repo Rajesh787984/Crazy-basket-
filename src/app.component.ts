@@ -1,8 +1,9 @@
 
 
 
+
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from './services/state.service';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -21,6 +22,7 @@ import { ManualPaymentComponent } from './components/checkout/manual-payment/man
 import { OrderConfirmationComponent } from './components/checkout/order-confirmation/order-confirmation.component';
 import { OrderHistoryComponent } from './components/orders/order-history.component';
 import { AddressFormComponent } from './components/address-form/address-form.component';
+import { ManageAddressesComponent } from './components/manage-addresses/manage-addresses.component';
 import { MyntraInsiderComponent } from './components/myntra-insider/myntra-insider.component';
 import { AdminComponent } from './components/admin/admin.component';
 import { ProfileEditComponent } from './components/profile-edit/profile-edit.component';
@@ -56,6 +58,7 @@ import { CouponsComponent } from './components/coupons/coupons.component';
 import { PullToRefreshComponent } from './components/pull-to-refresh/pull-to-refresh.component';
 import { TranslatePipe } from './pipes/translate.pipe';
 import { ReturnRequestComponent } from './components/return-request/return-request.component';
+import { LoadingSpinnerComponent } from './components/loading-spinner/loading-spinner.component';
 
 
 declare var Tawk_API: any;
@@ -64,69 +67,79 @@ declare var Tawk_API: any;
   selector: 'app-root',
   standalone: true,
   template: `
-    <div [class.blur-sm]="showPopup()" class="transition-all duration-300">
-      <div class="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
-        @if (!isImpersonating()) {
-          <app-header></app-header>
-        } @else {
-          <div class="bg-yellow-400 text-black text-center p-2 font-bold">
-            You are impersonating {{ stateService.currentUser()?.name }}. 
-            <button (click)="stateService.stopImpersonating()" class="underline ml-4">Return to Admin</button>
-          </div>
-        }
-        
-        <div class="flex flex-1 overflow-y-hidden">
-          <app-sidebar [isOpen]="isSidebarOpen()"></app-sidebar>
+    @if (currentView() === 'admin') {
+      <app-admin></app-admin>
+    } @else {
+      <div [class.blur-sm]="showPopup()" class="transition-all duration-300 overflow-x-hidden">
+        <div class="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100">
+          @if (!isImpersonating()) {
+            <app-header></app-header>
+          } @else {
+            <div class="bg-yellow-400 text-black text-center p-2 font-bold">
+              You are impersonating {{ stateService.currentUser()?.name }}. 
+              <button (click)="stateService.stopImpersonating()" class="underline ml-4">Return to Admin</button>
+            </div>
+          }
+          
+          <div class="flex flex-1 overflow-y-hidden max-w-screen-2xl mx-auto w-full">
+            <app-sidebar [isOpen]="isSidebarOpen()"></app-sidebar>
 
-          <app-pull-to-refresh class="flex-grow">
-            <main class="overflow-y-auto h-full">
-              @switch (currentView()) {
-                @case ('home') { <app-home></app-home> }
-                @case ('productList') { <app-product-list></app-product-list> }
-                @case ('productDetail') { <app-product-detail></app-product-detail> }
-                @case ('cart') { <app-cart></app-cart> }
-                @case ('profile') { <app-profile></app-profile> }
-                @case ('login') { <app-login></app-login> }
-                @case ('address') { <app-address></app-address> }
-                @case ('payment') { <app-payment></app-payment> }
-                @case ('manual-payment') { <app-manual-payment></app-manual-payment> }
-                @case ('orderConfirmation') { <app-order-confirmation></app-order-confirmation> }
-                @case ('orders') { <app-order-history></app-order-history> }
-                @case ('address-form') { <app-address-form></app-address-form> }
-                @case ('myntra-insider') { <app-myntra-insider></app-myntra-insider> }
-                @case ('admin') { <app-admin></app-admin> }
-                @case ('profile-edit') { <app-profile-edit></app-profile-edit> }
-                @case ('language-settings') { <app-language-settings></app-language-settings> }
-                @case ('privacy-policy') { <app-privacy-policy></app-privacy-policy> }
-                @case ('contact-us') { <app-contact-us></app-contact-us> }
-                @case ('faq') { <app-faq></app-faq> }
-                @case ('outfitRecommender') { <app-outfit-recommender></app-outfit-recommender> }
-                @case ('wallet') { <app-wallet></app-wallet> }
-                @case ('productComparison') { <app-product-comparison></app-product-comparison> }
-                @case ('wishlist') { <app-wishlist></app-wishlist> }
-                @case ('partner-program') { <app-partner-program></app-partner-program> }
-                @case ('coupons') { <app-coupons></app-coupons> }
-                @case ('return-request') { <app-return-request></app-return-request> }
-                @default {
-                  <div class="p-8 text-center">
-                    <h2 class="text-2xl font-bold">Page Not Found</h2>
-                    <p>The view '{{ currentView() }}' does not exist.</p>
-                  </div>
+            <app-pull-to-refresh class="flex-grow min-w-0">
+              <main class="overflow-y-auto h-full pb-16 md:pb-0">
+                @defer {
+                  @switch (currentView()) {
+                    @case ('home') { <app-home></app-home> }
+                    @case ('productList') { <app-product-list></app-product-list> }
+                    @case ('productDetail') { <app-product-detail></app-product-detail> }
+                    @case ('cart') { <app-cart></app-cart> }
+                    @case ('profile') { <app-profile></app-profile> }
+                    @case ('login') { <app-login></app-login> }
+                    @case ('address') { <app-address></app-address> }
+                    @case ('manage-addresses') { <app-manage-addresses></app-manage-addresses> }
+                    @case ('payment') { <app-payment></app-payment> }
+                    @case ('manual-payment') { <app-manual-payment></app-manual-payment> }
+                    @case ('orderConfirmation') { <app-order-confirmation></app-order-confirmation> }
+                    @case ('orders') { <app-order-history></app-order-history> }
+                    @case ('address-form') { <app-address-form></app-address-form> }
+                    @case ('myntra-insider') { <app-myntra-insider></app-myntra-insider> }
+                    @case ('profile-edit') { <app-profile-edit></app-profile-edit> }
+                    @case ('language-settings') { <app-language-settings></app-language-settings> }
+                    @case ('privacy-policy') { <app-privacy-policy></app-privacy-policy> }
+                    @case ('contact-us') { <app-contact-us></app-contact-us> }
+                    @case ('faq') { <app-faq></app-faq> }
+                    @case ('outfitRecommender') { <app-outfit-recommender></app-outfit-recommender> }
+                    @case ('wallet') { <app-wallet></app-wallet> }
+                    @case ('productComparison') { <app-product-comparison></app-product-comparison> }
+                    @case ('wishlist') { <app-wishlist></app-wishlist> }
+                    @case ('partner-program') { <app-partner-program></app-partner-program> }
+                    @case ('coupons') { <app-coupons></app-coupons> }
+                    @case ('return-request') { <app-return-request></app-return-request> }
+                    @default {
+                      <div class="p-8 text-center">
+                        <h2 class="text-2xl font-bold">Page Not Found</h2>
+                        <p>The view '{{ currentView() }}' does not exist.</p>
+                      </div>
+                    }
+                  }
+                } @placeholder {
+                  <app-loading-spinner></app-loading-spinner>
+                } @loading (minimum 100ms) {
+                  <app-loading-spinner></app-loading-spinner>
                 }
-              }
-            </main>
-          </app-pull-to-refresh>
+              </main>
+            </app-pull-to-refresh>
+          </div>
+          
+          @if(stateService.comparisonList().length > 0) {
+            <app-comparison-tray></app-comparison-tray>
+          }
+          
+          @if (!isImpersonating()) {
+            <app-bottom-nav class="md:hidden sticky bottom-0"></app-bottom-nav>
+          }
         </div>
-        
-        @if(stateService.comparisonList().length > 0) {
-          <app-comparison-tray></app-comparison-tray>
-        }
-        
-        @if (!isImpersonating()) {
-          <app-bottom-nav class="md:hidden sticky bottom-0"></app-bottom-nav>
-        }
       </div>
-    </div>
+    }
 
     <!-- Toast Message -->
     @if (toastMessage(); as message) {
@@ -140,7 +153,7 @@ declare var Tawk_API: any;
       <div class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
         <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl max-w-sm w-full mx-4">
           <div class="relative">
-            <img [src]="popup.imageUrl" [alt]="popup.title" class="w-full h-48 object-cover">
+            <img [ngSrc]="popup.imageUrl" [alt]="popup.title" class="w-full h-48 object-cover" width="384" height="192" priority>
             <button (click)="closePopup()" class="absolute top-2 right-2 bg-white dark:bg-gray-700 rounded-full p-1">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
@@ -171,6 +184,7 @@ declare var Tawk_API: any;
     LoginComponent,
     AddressComponent,
     AddressFormComponent,
+    ManageAddressesComponent,
     PaymentComponent,
     ManualPaymentComponent,
     OrderConfirmationComponent,
@@ -209,7 +223,9 @@ declare var Tawk_API: any;
     CouponsComponent,
     PullToRefreshComponent,
     TranslatePipe,
-    ReturnRequestComponent
+    ReturnRequestComponent,
+    LoadingSpinnerComponent,
+    NgOptimizedImage
   ],
 })
 export class AppComponent implements OnInit {

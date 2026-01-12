@@ -14,7 +14,7 @@ import { Product } from '../../models/product.model';
       @if (wishlistProducts().length > 0) {
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           @for (product of wishlistProducts(); track product.id; let i = $index) {
-            <div class="border rounded-lg overflow-hidden group relative flex flex-col">
+            <div class="border dark:border-gray-700 rounded-lg overflow-hidden group relative flex flex-col">
               <div class="absolute top-2 right-2 z-10">
                 <button (click)="removeFromWishlist(product.id)" title="Remove from wishlist" class="bg-white/70 backdrop-blur-sm rounded-full p-2 text-gray-700 hover:text-red-500 hover:bg-white transition-all duration-200">
                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -25,15 +25,15 @@ import { Product } from '../../models/product.model';
               <div class="aspect-[2/3] overflow-hidden cursor-pointer" (click)="viewProduct(product.id)">
                 <img [ngSrc]="product.images[0]" [alt]="product.name" width="200" height="300" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" [priority]="i < 2">
               </div>
-              <div class="p-3 bg-white flex-grow flex flex-col">
-                <h3 class="font-bold text-sm truncate">{{ product.brand }}</h3>
-                <p class="text-xs text-gray-600 truncate flex-grow">{{ product.name }}</p>
+              <div class="p-3 bg-white dark:bg-gray-800 flex-grow flex flex-col">
+                <h3 class="font-bold text-sm truncate text-gray-800 dark:text-gray-100">{{ product.brand }}</h3>
+                <p class="text-xs text-gray-600 dark:text-gray-400 truncate flex-grow">{{ product.name }}</p>
                 <div class="flex items-baseline mt-2">
-                  <p class="font-bold">
+                  <p class="font-bold text-gray-900 dark:text-white">
                     ₹{{ (isB2B() && product.b2bPrice) ? product.b2bPrice : product.price }}
                   </p>
                   @if (product.originalPrice > product.price) {
-                    <p class="text-xs text-gray-500 line-through ml-2">₹{{ product.originalPrice }}</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 line-through ml-2">₹{{ product.originalPrice }}</p>
                     <p class="text-xs text-pink-500 font-semibold ml-2">({{ product.discount }}% OFF)</p>
                   }
                 </div>
@@ -47,7 +47,7 @@ import { Product } from '../../models/product.model';
       } @else {
         <div class="text-center py-16">
           <h2 class="text-xl font-bold mb-2">YOUR WISHLIST IS EMPTY</h2>
-          <p class="text-gray-600 mb-6">Add your favourite items to your wishlist and they will show up here.</p>
+          <p class="text-gray-600 dark:text-gray-400 mb-6">Add your favourite items to your wishlist and they will show up here.</p>
           <button (click)="stateService.navigateTo('home')" class="bg-pink-500 text-white px-6 py-2 rounded-md font-semibold hover:bg-pink-600 transition-colors">
             CONTINUE SHOPPING
           </button>

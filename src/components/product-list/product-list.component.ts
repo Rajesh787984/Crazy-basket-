@@ -18,6 +18,11 @@ export class ProductListComponent implements OnInit {
   allProducts = signal<Product[]>([]);
   showFilters = signal(false);
 
+  // Quick View State
+  quickViewProduct = signal<Product | null>(null);
+  quickViewSelectedSize = signal<string | null>(null);
+  quickViewActiveImageIndex = signal(0);
+
   // Filter options derived from products
   priceRanges = [
     { label: 'Under 500', value: '0-500' },
@@ -148,5 +153,52 @@ export class ProductListComponent implements OnInit {
   isSaleActive(product: Product): boolean {
     if (!product.flashSale) return false;
     return new Date(product.flashSale.endDate) > new Date();
+  }
+
+  // --- Quick View Methods ---
+
+  openQuickView(productId: string, event: MouseEvent) {
+    event.stopPropagation();
+    const product = this.productsWithDisplayPrice().find(p => p.id === productId);
+    if (product) {
+      this.quickViewProduct.set(product);
+      this.quickViewSelectedSize.set(null);
+      this.quickViewActiveImageIndex.set(0);
+    }
+  }
+
+  closeQuickView() {
+    this.quickViewProduct.set(null);
+  }
+
+  selectQuickViewSize(size: string) {
+    this.quickViewSelectedSize.set(size);
+  }
+
+  setQuickViewImage(index: number) {
+    this.quickViewActiveImageIndex.set(index);
+  }
+
+  addToBagFromQuickView() {
+    const product = this.quickViewProduct();
+    const size = this.quickViewSelectedSize();
+    const sizeInfo = product?.sizes.find(sz => sz.name === size);
+
+    if (product && size && sizeInfo?.inStock) {
+      this.stateService.addToCart(product, size);
+      this.closeQuickView();
+    } else if (!size) {
+      this.stateService.showToast('Please select a size!');
+    } else {
+      this.stateService.showToast('This size is out of stock!');
+    }
+  }
+
+  viewFullDetails() {
+    const product = this.quickViewProduct();
+    if (product) {
+      this.viewProduct(product.id);
+      this.closeQuickView();
+    }
   }
 }

@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   host: {
     '(touchstart)': 'onTouchStart($event)',
     '(touchmove)': 'onTouchMove($event)',
-    '(touchend)': 'onTouchEnd()'
+    '(touchend)': 'onTouchEnd($event)'
   },
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -27,9 +27,9 @@
             <td class="py-3 px-5">
               <div class="flex items-center">
                 @if (req.item.returnRequest?.photoUrl) {
-                  <img [src]="req.item.returnRequest.photoUrl" alt="Customer photo" class="w-16 h-20 object-cover rounded-md mr-4">
+                  <img [ngSrc]="req.item.returnRequest.photoUrl" alt="Customer photo" class="w-16 h-20 object-cover rounded-md mr-4" width="64" height="80">
                 } @else {
-                  <img [src]="req.item.product.images[0]" alt="Product image" class="w-16 h-20 object-cover rounded-md mr-4">
+                  <img [ngSrc]="req.item.product.images[0]" alt="Product image" class="w-16 h-20 object-cover rounded-md mr-4" width="64" height="80">
                 }
                 <div>
                   <p class="font-semibold text-sm">{{ req.item.product.name }}</p>

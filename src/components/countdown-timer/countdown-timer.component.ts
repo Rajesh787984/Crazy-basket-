@@ -1,5 +1,4 @@
-
-import { Component, ChangeDetectionStrategy, input, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectionStrategy, input, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -14,49 +13,59 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CountdownTimerComponent implements OnInit, OnDestroy {
+export class CountdownTimerComponent {
   endDate = input.required<string>();
   
   timeRemaining = signal('');
-  private intervalId?: any;
 
-  ngOnInit() {
-    this.startCountdown();
-  }
+  constructor() {
+    effect((onCleanup) => {
+      // FIX: An input signal must be called as a function to retrieve its value.
+      const endDateValue = this.endDate();
+      
+      if (!endDateValue) {
+        this.timeRemaining.set('');
+        return;
+      }
+      
+      const endTime = new Date(endDateValue).getTime();
 
-  ngOnDestroy() {
-    this.stopCountdown();
-  }
+      // This function updates the timer and returns `false` when it's finished.
+      const update = (): boolean => {
+        const now = new Date().getTime();
+        const distance = endTime - now;
 
-  startCountdown() {
-    this.updateCountdown();
-    this.intervalId = setInterval(() => {
-      this.updateCountdown();
-    }, 1000);
-  }
+        if (distance < 0) {
+          this.timeRemaining.set('Sale Ended');
+          return false;
+        }
 
-  stopCountdown() {
-    if (this.intervalId) {
-      clearInterval(this.intervalId);
-    }
-  }
-  
-  updateCountdown() {
-    const now = new Date().getTime();
-    const end = new Date(this.endDate()).getTime();
-    const distance = end - now;
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        this.timeRemaining.set(`${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`);
+        return true;
+      };
 
-    if (distance < 0) {
-      this.timeRemaining.set('');
-      this.stopCountdown();
-      return;
-    }
+      // Run once immediately. If it has already ended, do not start the interval.
+      if (!update()) {
+        return;
+      }
 
-    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-    
-    this.timeRemaining.set(`${this.pad(hours)}:${this.pad(minutes)}:${this.pad(seconds)}`);
+      const intervalId = setInterval(() => {
+        if (!update()) {
+          clearInterval(intervalId);
+        }
+      }, 1000);
+
+      // The onCleanup function is crucial. It runs when the effect is destroyed
+      // (e.g., when the component is destroyed or the endDate input changes),
+      // preventing memory leaks from old intervals.
+      onCleanup(() => {
+        clearInterval(intervalId);
+      });
+    });
   }
 
   private pad(num: number): string {

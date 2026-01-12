@@ -1,5 +1,5 @@
 import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
 import { Order, OrderItem } from '../../models/order.model';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 @Component({
   selector: 'app-return-request',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe],
+  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, NgOptimizedImage],
   templateUrl: './return-request.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

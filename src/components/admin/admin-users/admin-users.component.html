@@ -1,8 +1,54 @@
-
 <div>
   <h1 class="text-3xl font-bold mb-6">Manage Users</h1>
   
-  <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+  <!-- Mobile Card View -->
+  <div class="space-y-4 lg:hidden">
+    @for(user of users(); track user.id) {
+       @if(user.id !== '1') {
+        <div class="bg-white rounded-lg shadow p-4 space-y-3">
+          <div class="flex justify-between items-start">
+            <div>
+              <h2 class="font-bold">{{ user.name }}</h2>
+              <p class="text-sm text-gray-600">{{ user.email }}</p>
+            </div>
+            @if(user.isBlacklisted) {
+              <span class="text-red-600 font-semibold text-xs bg-red-100 px-2 py-1 rounded-full">Blacklisted</span>
+            } @else {
+              <span class="text-green-600 font-semibold text-xs bg-green-100 px-2 py-1 rounded-full">Active</span>
+            }
+          </div>
+
+          <div class="text-xs space-y-1 border-t pt-3">
+            <div class="flex justify-between"><span class="text-gray-500">Referred by:</span> <span class="font-semibold">{{ getReferrerName(user) }}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Has referred:</span> <span class="font-semibold">{{ getReferralCount(user.id) }} users</span></div>
+            <div class="flex justify-between items-center"><span class="text-gray-500">User Type:</span> 
+               <select [value]="user.userType" (change)="updateUserType(user.id, $event)" class="border rounded-md p-1 bg-white text-xs">
+                  <option value="B2C">B2C</option>
+                  <option value="B2B">B2B</option>
+                </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 border-t pt-3 text-sm">
+            <button (click)="openWalletModal(user)" class="bg-green-50 text-green-700 font-semibold py-2 px-3 rounded-lg w-full">Wallet</button>
+            <button (click)="openViewsModal(user)" class="bg-blue-50 text-blue-700 font-semibold py-2 px-3 rounded-lg w-full">Views</button>
+            <button (click)="impersonate(user.id)" class="bg-purple-50 text-purple-700 font-semibold py-2 px-3 rounded-lg w-full">Impersonate</button>
+            <button (click)="toggleBlacklist(user.id)" class="font-semibold py-2 px-3 rounded-lg w-full"
+                    [class.bg-red-50]="!user.isBlacklisted" [class.text-red-700]="!user.isBlacklisted"
+                    [class.bg-yellow-50]="user.isBlacklisted" [class.text-yellow-700]="user.isBlacklisted">
+               {{ user.isBlacklisted ? 'Unlist' : 'Blacklist' }}
+            </button>
+          </div>
+        </div>
+      }
+    } @empty {
+      <p class="text-center py-10 text-gray-500">No users found.</p>
+    }
+  </div>
+
+
+  <!-- Desktop Table View -->
+  <div class="bg-white shadow-md rounded-lg overflow-x-auto hidden lg:block">
     <table class="min-w-full leading-normal">
       <thead>
         <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
@@ -60,19 +106,20 @@
 
 <!-- Modal -->
 @if (modalView()) {
-  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center" (click)="closeModal()">
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-6" (click)="$event.stopPropagation()">
-      @if (selectedUser(); as user) {
-        <h2 class="text-2xl font-bold mb-4">
+  <div class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4" (click)="closeModal()">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md" (click)="$event.stopPropagation()">
+      <div class="p-4 border-b">
+         <h2 class="text-xl font-bold">
           @switch (modalView()) {
-            @case ('wallet') { Manage Wallet for {{ user.name }} }
-            @case ('views') { Product Views for {{ user.name }} }
+            @case ('wallet') { Manage Wallet for {{ selectedUser()?.name }} }
+            @case ('views') { Product Views for {{ selectedUser()?.name }} }
           }
         </h2>
-
+      </div>
+      @if (selectedUser(); as user) {
         <!-- Wallet View -->
         @if (modalView() === 'wallet') {
-          <div class="space-y-4">
+          <div class="p-4 space-y-4">
             <div class="text-center bg-gray-100 p-4 rounded-lg">
               <p class="text-sm text-gray-600">Current Balance</p>
               <p class="text-3xl font-bold">₹{{ user.walletBalance | number }}</p>
@@ -92,7 +139,7 @@
 
         <!-- Views View -->
         @if (modalView() === 'views') {
-          <div class="max-h-96 overflow-y-auto">
+          <div class="p-4 max-h-[60vh] overflow-y-auto">
             @for (item of userProductViews(); track item.product.id) {
               <div class="flex items-center p-2 border-b last:border-0">
                 <img [src]="item.product.images[0]" class="w-12 h-16 object-cover rounded mr-4">
@@ -111,7 +158,9 @@
           </div>
         }
       }
-      <button (click)="closeModal()" class="w-full mt-6 bg-gray-200 text-gray-800 font-bold py-2 rounded-lg">Close</button>
+      <div class="p-4 border-t bg-gray-50">
+        <button (click)="closeModal()" class="w-full bg-gray-200 text-gray-800 font-bold py-2 rounded-lg">Close</button>
+      </div>
     </div>
   </div>
 }

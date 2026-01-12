@@ -47,11 +47,25 @@ export class StateService {
   private authService: AuthService = inject(AuthService);
   
   constructor() {
-    // Language setup from localStorage
+    // Setup from localStorage
     if (typeof localStorage !== 'undefined') {
+      // Language
       const storedLang = localStorage.getItem('crazyBasketLang');
       if (storedLang) {
         this.currentLanguage.set(storedLang);
+      }
+      // Recently Viewed
+      const storedRecentlyViewed = localStorage.getItem('crazyBasketRecentlyViewed');
+      if (storedRecentlyViewed) {
+        try {
+          const parsedIds = JSON.parse(storedRecentlyViewed);
+          if (Array.isArray(parsedIds)) {
+            this.recentlyViewed.set(parsedIds);
+          }
+        } catch (e) {
+          console.error('Failed to parse recently viewed items from localStorage:', e);
+          localStorage.removeItem('crazyBasketRecentlyViewed');
+        }
       }
     }
     
@@ -72,6 +86,13 @@ export class StateService {
         this.currentUser.set(null);
       }
     });
+
+    // Effect to persist recently viewed items to localStorage
+    effect(() => {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem('crazyBasketRecentlyViewed', JSON.stringify(this.recentlyViewed()));
+      }
+    });
   }
 
   // --- STATE ---
@@ -81,7 +102,7 @@ export class StateService {
     { id: '1', name: 'Admin User', email: 'admin@crazybasket.com', mobile: '8279458045', password: 'password', isVerified: true, walletBalance: 1000, isBlacklisted: false, userType: 'B2C', ipAddress: '127.0.0.1', deviceId: 'DEV_ADMIN', referralCode: 'ADMIN', photoUrl: 'https://picsum.photos/seed/admin/200/200' },
     { id: '2', name: 'John Doe', email: 'user@example.com', mobile: '9876543210', password: 'password', isVerified: true, walletBalance: 250, isBlacklisted: false, userType: 'B2C', ipAddress: '192.168.1.10', deviceId: 'DEV_JOHN', referralCode: 'JOHN', photoUrl: 'https://picsum.photos/seed/john/200/200' },
     { id: '3', name: 'Jane Smith', email: 'jane@example.com', mobile: '1234567890', password: 'password', isVerified: true, walletBalance: 0, isBlacklisted: false, userType: 'B2B', ipAddress: '192.168.1.10', deviceId: 'DEV_JANE', referredBy: '2', referralCode: 'JANE', photoUrl: 'https://picsum.photos/seed/jane/200/200' },
-    { id: '4', name: 'Peter Jones', email: 'peter@example.com', mobile: '1122334455', password: 'password', isVerified: true, walletBalance: 50, isBlacklisted: false, userType: 'B2C', ipAddress: '203.0.113.45', deviceId: 'DEV_PETER', referredBy: '2', referralCode: 'PETER', photoUrl: 'https://picsum.photos/seed/peter/200/200' }
+    { id: '4', name: 'Peter Jones', email: 'peter@example.com', mobile: '1122334455', password: 'password', isVerified: false, walletBalance: 50, isBlacklisted: false, userType: 'B2C', ipAddress: '203.0.113.45', deviceId: 'DEV_PETER', referredBy: '2', referralCode: 'PETER', photoUrl: 'https://picsum.photos/seed/peter/200/200' }
   ]);
   currentUser = signal<User | null>(null);
   originalAdmin = signal<User | null>(null); // For impersonation
@@ -92,7 +113,7 @@ export class StateService {
   
   // Navigation
   currentView = signal<string>('home');
-  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'outfitRecommender', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'productComparison', 'wishlist', 'partner-program', 'coupons', 'return-request']);
+  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'outfitRecommender', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'productComparison', 'wishlist', 'partner-program', 'coupons', 'return-request', 'manage-addresses']);
   lastNavigatedView = signal<string>('home');
 
   // Admin Panel Navigation
@@ -163,8 +184,8 @@ export class StateService {
     { id: 'cat1', name: 'Men', img: 'https://picsum.photos/id/1025/200/200', bgColor: 'bg-blue-100' },
     { id: 'cat2', name: 'Women', img: 'https://picsum.photos/id/1027/200/200', bgColor: 'bg-pink-100' },
     { id: 'cat3', name: 'Kids', img: 'https://picsum.photos/id/103/200/200', bgColor: 'bg-yellow-100' },
-    { id: 'cat4', name: 'Home & Living', img: 'https://picsum.photos/id/1061/200/200', bgColor: 'bg-green-100' },
-    { id: 'cat5', name: 'Beauty', img: 'https://picsum.photos/id/1074/200/200', bgColor: 'bg-purple-100' }
+    { id: 'cat4', name: 'Electronics', img: 'https://picsum.photos/id/0/200/200', bgColor: 'bg-gray-200' },
+    { id: 'cat5', name: 'Customize Gift', img: 'https://picsum.photos/id/1080/200/200', bgColor: 'bg-orange-100' }
   ]);
   
   contactInfo = signal({
@@ -263,14 +284,14 @@ export class StateService {
   }
 
   navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product, orderItem?: { orderId: string, itemId: string } }) {
-    if (view === 'admin' && !this.isAdmin()) {
-      this.showToast('Access Denied: You are not an admin.');
-      return;
-    }
     if (this.protectedViews.has(view) && !this.isAuthenticated()) {
       this.lastNavigatedView.set(view);
       this.currentView.set('login');
       this.showToast('Please log in to continue');
+      return;
+    }
+    if (view === 'admin' && !this.isAdmin()) {
+      this.showToast('Access Denied: You are not an admin.');
       return;
     }
     
@@ -498,20 +519,38 @@ export class StateService {
 
   // Address Methods
   addAddress(address: Omit<Address, 'id' | 'isDefault'>) {
-      const newAddress: Address = { ...address, id: `addr_${Date.now()}`, isDefault: false };
+      const isFirstAddress = this.userAddresses().length === 0;
+      const newAddress: Address = { ...address, id: `addr_${Date.now()}`, isDefault: isFirstAddress };
       this.userAddresses.update(addresses => [...addresses, newAddress]);
       this.showToast('Address added successfully!');
-      this.navigateTo('address');
+      if (this.currentView() === 'address-form' && this.lastNavigatedView() === 'manage-addresses') {
+        this.navigateTo('manage-addresses');
+      } else {
+        this.navigateTo('address');
+      }
   }
   updateAddress(updatedAddress: Address) {
       this.userAddresses.update(addresses => addresses.map(a => a.id === updatedAddress.id ? updatedAddress : a));
       this.showToast('Address updated successfully!');
-      this.navigateTo('address');
+      if (this.currentView() === 'address-form' && this.lastNavigatedView() === 'manage-addresses') {
+        this.navigateTo('manage-addresses');
+      } else {
+        this.navigateTo('address');
+      }
   }
   deleteAddress(addressId: string) {
       this.userAddresses.update(addresses => addresses.filter(a => a.id !== addressId));
       if (this.selectedAddressId() === addressId) { this.selectedAddressId.set(null); }
       this.showToast('Address deleted.');
+  }
+  setDefaultAddress(addressId: string) {
+    this.userAddresses.update(addresses => 
+      addresses.map(a => ({
+        ...a,
+        isDefault: a.id === addressId
+      }))
+    );
+    this.showToast('Default address updated.');
   }
 
   // Order & Review Methods

@@ -1,7 +1,7 @@
 
 
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, OnDestroy, ElementRef } from '@angular/core';
+import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
@@ -12,30 +12,76 @@ type Suggestion = Product | { type: 'category', name: string };
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   stateService: StateService = inject(StateService);
   productService: ProductService = inject(ProductService);
+  // FIX: Explicitly type the injected ElementRef to resolve type inference issue.
+  private elementRef: ElementRef<HTMLElement> = inject(ElementRef);
 
   cartItemCount = this.stateService.cartItemCount;
   wishlistItemCount = this.stateService.wishlistItemCount;
   currentView = this.stateService.currentView;
   isAuthenticated = this.stateService.isAuthenticated;
   categories = this.stateService.categories;
+  isAdmin = this.stateService.isAdmin;
   
   searchQuery = signal('');
   suggestions = signal<Suggestion[]>([]);
   showSuggestions = signal(false);
 
+  showMiniCart = signal(false);
+  cartItems = this.stateService.cartItemsWithPrices;
+  cartTotal = this.stateService.cartTotal;
+  miniCartItems = computed(() => this.cartItems().slice(0, 3));
+  
+  private onDocumentClick = (event: MouseEvent): void => {
+    // FIX: Cast event.target to Node as the 'contains' method expects a Node, which resolves the type error.
+    if (this.showMiniCart() && this.elementRef.nativeElement && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      if (!(event.target as HTMLElement).closest('.relative[data-minicart-container]')) {
+         this.showMiniCart.set(false);
+      }
+    }
+  };
+
+  ngOnInit(): void {
+    document.addEventListener('click', this.onDocumentClick, true);
+  }
+
+  ngOnDestroy(): void {
+    document.removeEventListener('click', this.onDocumentClick, true);
+  }
+
   toggleSidebar() {
     this.stateService.isSidebarOpen.update(v => !v);
   }
 
+  toggleOrGoToCart(event: MouseEvent) {
+    if (typeof window !== 'undefined' && window.innerWidth >= 1024) { // lg breakpoint is 1024px
+      if (this.cartItemCount() > 0) {
+        event.stopPropagation();
+        this.showMiniCart.update(v => !v);
+      } else {
+        this.stateService.navigateTo('cart');
+      }
+    } else {
+      this.stateService.navigateTo('cart');
+    }
+  }
+
   goHome() { this.stateService.navigateTo('home'); }
-  goToCart() { this.stateService.navigateTo('cart'); }
+  goToCart() { 
+    this.showMiniCart.set(false);
+    this.stateService.navigateTo('cart'); 
+  }
+  goToCheckout() {
+    this.showMiniCart.set(false);
+    this.stateService.navigateTo('address');
+  }
   goToProfile() { this.stateService.navigateTo('profile'); }
+  goToAdmin() { this.stateService.navigateTo('admin'); }
   goToWishlist() { this.stateService.navigateTo('wishlist'); }
   selectCategory(categoryName: string) {
     this.stateService.navigateTo('productList', { category: categoryName });

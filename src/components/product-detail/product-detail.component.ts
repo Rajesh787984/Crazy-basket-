@@ -38,6 +38,9 @@ export class ProductDetailComponent implements OnDestroy {
   
   flashSaleTimeRemaining = signal('');
 
+  // New properties for mobile accordion
+  openAccordion = signal<'details' | 'video' | 'reviews' | null>('details');
+
   productWithDisplayPrice = computed(() => {
     const p = this.product();
     if (!p) return undefined;
@@ -95,6 +98,10 @@ export class ProductDetailComponent implements OnDestroy {
     this.stopCountdown();
     // Reset meta tags when leaving the page
     this.titleService.setTitle('Crazy Basket');
+  }
+
+  toggleAccordion(section: 'details' | 'video' | 'reviews') {
+    this.openAccordion.update(current => current === section ? null : section);
   }
 
   loadProduct() {

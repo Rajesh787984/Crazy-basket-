@@ -1,0 +1,41 @@
+<div class="p-4 bg-gray-100 dark:bg-gray-900 min-h-full">
+  <h1 class="text-xl font-bold mb-4 dark:text-gray-100">Manage Addresses</h1>
+  
+  <div class="space-y-4">
+    @for(address of addresses(); track address.id) {
+      <div class="block bg-white dark:bg-gray-800 p-4 rounded-lg border-2" [class.border-pink-500]="address.isDefault" [class.border-gray-200]="!address.isDefault" [class.dark:border-gray-700]="!address.isDefault">
+        <div class="flex justify-between items-start">
+            <div>
+                <span class="font-bold dark:text-white">{{ address.name }}</span>
+                @if (address.isDefault) {
+                  <span class="text-xs border px-2 py-1 rounded-full text-white bg-pink-500 ml-2">DEFAULT</span>
+                }
+            </div>
+        </div>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">{{ address.address }}, {{ address.locality }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-300">{{ address.city }}, {{ address.state }} - {{ address.pincode }}</p>
+        <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">Mobile: <span class="font-semibold dark:text-gray-200">{{ address.mobile }}</span></p>
+
+        <div class="mt-4 pt-4 border-t dark:border-gray-700 flex items-center justify-between">
+            <div>
+                 @if (!address.isDefault) {
+                    <button (click)="setDefaultAddress(address.id)" class="text-sm font-semibold text-green-600 dark:text-green-400 hover:underline px-3 py-2 rounded-md">Set as Default</button>
+                 }
+            </div>
+            <div class="flex space-x-2">
+              <button (click)="editAddress(address)" class="text-sm font-semibold text-blue-500 dark:text-blue-400 hover:underline px-3 py-2 rounded-md">EDIT</button>
+              <button (click)="deleteAddress(address.id)" class="text-sm font-semibold text-red-500 dark:text-red-400 hover:underline px-3 py-2 rounded-md">DELETE</button>
+            </div>
+        </div>
+      </div>
+    } @empty {
+        <div class="text-center py-10 bg-white dark:bg-gray-800 rounded-lg">
+            <p class="text-gray-500 dark:text-gray-400">You haven't saved any addresses yet.</p>
+        </div>
+    }
+  </div>
+
+  <button (click)="addNewAddress()" class="w-full mt-6 border-2 border-dashed border-pink-400 text-pink-500 dark:border-pink-600 dark:text-pink-500 font-bold py-3 rounded-md hover:bg-pink-50 dark:hover:bg-pink-900/50">
+    + ADD NEW ADDRESS
+  </button>
+</div>
