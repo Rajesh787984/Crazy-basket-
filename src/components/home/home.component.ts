@@ -4,11 +4,13 @@ import { StateService, HeroSlide } from '../../services/state.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
 import { RecentlyViewedComponent } from '../recently-viewed/recently-viewed.component';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-home',
   templateUrl: './home.component.html',
-  imports: [CommonModule, RecentlyViewedComponent, NgOptimizedImage],
+  standalone: true, // ✅ यह सबसे ज़रूरी है
+  imports: [CommonModule, RecentlyViewedComponent, NgOptimizedImage, RouterModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, OnDestroy {
@@ -70,7 +72,8 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   loadFeaturedProducts() {
     const allProducts = this.productService.getAllProducts();
-    const shuffled = allProducts.sort(() => 0.5 - Math.random());
+    // Products को रैंडम करने के लिए (ताकि हर बार अलग दिखें)
+    const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
     this.featuredProducts.set(shuffled.slice(0, 8));
   }
 
