@@ -38,6 +38,8 @@ export class AdminSmallBannerComponent implements OnInit {
     if (this.bannerForm.valid) {
       const formValue = this.bannerForm.getRawValue();
       const updatedBanner: HeroSlide = {
+        // FIX: Added missing 'id' property to satisfy the HeroSlide interface.
+        id: this.smallBanner().id,
         img: formValue.img!,
         title: formValue.title!,
         subtitle: '', // Not used for small banner

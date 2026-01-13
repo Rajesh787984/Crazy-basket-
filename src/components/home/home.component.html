@@ -22,7 +22,7 @@
         @if(smallBanner(); as banner) {
           <div class="px-4 pb-4">
             <div (click)="onBannerClick(banner)" [class.cursor-pointer]="banner.productId">
-              <img [ngSrc]="banner.img" [alt]="banner.title" width="1200" height="200" class="w-full h-auto rounded-lg shadow-md">
+              <img [ngSrc]="banner.img" [alt]="banner.title" width="1200" height="200" class="w-full h-auto rounded-lg shadow-md" priority>
             </div>
           </div>
         }

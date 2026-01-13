@@ -1,26 +1,75 @@
-
 <div>
-  <h1 class="text-3xl font-bold mb-6">Dashboard</h1>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <!-- Total Sales -->
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h2 class="text-sm font-medium text-gray-500">Total Sales</h2>
-      <p class="text-3xl font-bold mt-2">₹{{ totalSales() | number:'1.0-0' }}</p>
+  <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+    <h1 class="text-3xl font-bold">Dashboard</h1>
+    <!-- Time Period Filter -->
+    <div class="flex items-center bg-gray-200 rounded-lg p-1 text-sm font-semibold">
+      <button (click)="setTimePeriod('today')" [class.bg-white]="timePeriod() === 'today'" [class.shadow]="timePeriod() === 'today'" class="px-4 py-1 rounded-md transition-all">Today</button>
+      <button (click)="setTimePeriod('yesterday')" [class.bg-white]="timePeriod() === 'yesterday'" [class.shadow]="timePeriod() === 'yesterday'" class="px-4 py-1 rounded-md transition-all">Yesterday</button>
+      <button (click)="setTimePeriod('7days')" [class.bg-white]="timePeriod() === '7days'" [class.shadow]="timePeriod() === '7days'" class="px-4 py-1 rounded-md transition-all">Last 7 Days</button>
+      <button (click)="setTimePeriod('30days')" [class.bg-white]="timePeriod() === '30days'" [class.shadow]="timePeriod() === '30days'" class="px-4 py-1 rounded-md transition-all">Last 30 Days</button>
     </div>
-    <!-- Total Orders -->
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div class="bg-white p-6 rounded-lg shadow">
+      <h2 class="text-sm font-medium text-gray-500">Total Revenue</h2>
+      <p class="text-3xl font-bold mt-2">₹{{ totalRevenue() | number:'1.0-0' }}</p>
+    </div>
     <div class="bg-white p-6 rounded-lg shadow">
       <h2 class="text-sm font-medium text-gray-500">Total Orders</h2>
-      <p class="text-3xl font-bold mt-2">{{ totalOrders().length }}</p>
+      <p class="text-3xl font-bold mt-2">{{ totalOrdersCount() }}</p>
     </div>
-    <!-- Pending Orders -->
     <div class="bg-white p-6 rounded-lg shadow">
-      <h2 class="text-sm font-medium text-gray-500">Pending Orders</h2>
-      <p class="text-3xl font-bold mt-2">{{ pendingOrdersCount() }}</p>
+      <h2 class="text-sm font-medium text-gray-500">Average Order Value</h2>
+      <p class="text-3xl font-bold mt-2">₹{{ averageOrderValue() | number:'1.0-0' }}</p>
     </div>
-    <!-- Total Users -->
-    <div class="bg-white p-6 rounded-lg shadow">
-      <h2 class="text-sm font-medium text-gray-500">Total Users</h2>
-      <p class="text-3xl font-bold mt-2">{{ totalUsersCount() }}</p>
+  </div>
+
+  <!-- Recent Orders -->
+  <div class="mt-8">
+    <h2 class="text-xl font-bold mb-4">Recent Orders</h2>
+    <div class="bg-white shadow-md rounded-lg overflow-x-auto">
+      <table class="min-w-full leading-normal">
+        <thead>
+          <tr class="bg-gray-200 text-gray-600 uppercase text-sm">
+            <th class="py-3 px-5 text-left">Order ID</th>
+            <th class="py-3 px-5 text-left">Customer</th>
+            <th class="py-3 px-5 text-left">Total</th>
+            <th class="py-3 px-5 text-center">Status</th>
+          </tr>
+        </thead>
+        <tbody class="text-gray-700">
+          @for(order of recentOrders(); track order.id) {
+            @if(getUserForOrder(order); as user) {
+              <tr class="border-b border-gray-200 hover:bg-gray-100">
+                <td class="py-3 px-5 font-mono text-xs">{{ order.id }}</td>
+                <td class="py-3 px-5">{{ user.name }}</td>
+                <td class="py-3 px-5 font-semibold">₹{{ order.totalAmount | number }}</td>
+                <td class="py-3 px-5 text-center">
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full"
+                          [class.bg-green-100]="order.status === 'Delivered'"
+                          [class.text-green-800]="order.status === 'Delivered'"
+                          [class.bg-blue-100]="order.status === 'Shipped'"
+                          [class.text-blue-800]="order.status === 'Shipped'"
+                          [class.bg-yellow-100]="order.status === 'Confirmed'"
+                          [class.text-yellow-800]="order.status === 'Confirmed'"
+                          [class.bg-gray-200]="order.status === 'Pending Verification'"
+                          [class.text-gray-800]="order.status === 'Pending Verification'"
+                          [class.bg-red-100]="order.status === 'Cancelled'"
+                          [class.text-red-800]="order.status === 'Cancelled'">
+                      ● {{ order.status }}
+                    </span>
+                </td>
+              </tr>
+            }
+          } @empty {
+            <tr>
+              <td colspan="4" class="text-center py-10">No recent orders found.</td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   </div>
 </div>

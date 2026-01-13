@@ -14,6 +14,7 @@ export class LanguageSettingsComponent {
 
   languages = [
     { code: 'en', name: 'English' },
+    { code: 'hi', name: 'हिंदी (Hindi)' },
     { code: 'ta', name: 'தமிழ் (Tamil)' },
     { code: 'te', name: 'తెలుగు (Telugu)' },
     { code: 'kn', name: 'ಕನ್ನಡ (Kannada)' },

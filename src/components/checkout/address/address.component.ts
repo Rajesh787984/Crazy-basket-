@@ -12,7 +12,7 @@ import { Address } from '../../../models/address.model';
 })
 export class AddressComponent {
   stateService: StateService = inject(StateService);
-  addresses = this.stateService.userAddresses;
+  addresses = this.stateService.currentUserAddresses;
   selectedAddressId = this.stateService.selectedAddressId;
 
   selectAddress(id: string) {

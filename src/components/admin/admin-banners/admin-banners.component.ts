@@ -1,4 +1,5 @@
 
+
 import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService, HeroSlide } from '../../../services/state.service';
@@ -28,7 +29,8 @@ export class AdminBannersComponent {
 
   addBanner() {
     if (this.bannerForm.valid) {
-      this.stateService.addBanner(this.bannerForm.value as HeroSlide);
+      // FIX: Correct the type assertion as the form value does not include an 'id'.
+      this.stateService.addBanner(this.bannerForm.value as Omit<HeroSlide, 'id'>);
       this.bannerForm.reset({ productId: '' });
     } else {
       this.stateService.showToast('Please fill all fields for the banner.');

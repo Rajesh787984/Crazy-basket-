@@ -1,13 +1,168 @@
 
-
-import { Injectable } from '@angular/core';
+import { Injectable, inject, signal, WritableSignal } from '@angular/core';
 import { Product } from '../models/product.model';
+import { FirestoreService } from './firestore.service';
+import { doc, writeBatch } from 'firebase/firestore';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ProductService {
-  private products: Product[] = [
+  private firestore: FirestoreService = inject(FirestoreService);
+  private products: WritableSignal<Product[]> = signal([]);
+  
+  private initialized: Promise<void>;
+  private resolveInitialized!: () => void;
+
+  constructor() {
+    this.initialized = new Promise(resolve => this.resolveInitialized = resolve);
+    this.initProducts();
+  }
+
+  public ensureInitialized(): Promise<void> {
+    return this.initialized;
+  }
+
+  private async initProducts() {
+    try {
+      // Try to seed and load from Firestore
+      await this.firestore.seedCollection('products', this.getMockProducts());
+      const products = await this.firestore.getCollection<Product>('products');
+      this.products.set(products);
+      console.log('Successfully initialized products from Firestore.');
+    } catch (error) {
+      // On failure, log a warning and fall back to mock data
+      console.warn('Firestore initialization for products failed. Falling back to mock data.', error);
+      this.products.set(this.getMockProducts());
+    } finally {
+      // Always resolve the initialization promise
+      this.resolveInitialized();
+    }
+  }
+
+  getAllProducts(): Product[] {
+    return this.products();
+  }
+
+  getProducts(category: string | null): Product[] {
+    if (!category) {
+        return this.products();
+    }
+    return this.products().filter(p => p.category === category);
+  }
+
+  getProductById(id: string): Product | undefined {
+    return this.products().find((p) => p.id === id);
+  }
+
+  async addProduct(product: Omit<Product, 'id'>) {
+    const newId = `prod_${Date.now()}`;
+    const newProduct: Product = { ...product, id: newId };
+    try {
+      await this.firestore.setDocument('products', newId, newProduct);
+    } catch (error) {
+      console.error('Firestore addProduct failed:', error);
+    }
+    // Optimistic UI update
+    this.products.update(p => [newProduct, ...p]);
+  }
+
+  async updateProduct(updatedProduct: Product) {
+    try {
+      await this.firestore.setDocument('products', updatedProduct.id, updatedProduct);
+    } catch (error) {
+      console.error('Firestore updateProduct failed:', error);
+    }
+    // Optimistic UI update
+    this.products.update(products => products.map(p => p.id === updatedProduct.id ? updatedProduct : p));
+  }
+
+  async deleteProduct(productId: string) {
+    try {
+      await this.firestore.deleteDocument('products', productId);
+    } catch (error) {
+      console.error('Firestore deleteProduct failed:', error);
+    }
+    // Optimistic UI update
+    this.products.update(products => products.filter(p => p.id !== productId));
+  }
+
+  async updateCategoryName(oldName: string, newName: string) {
+    const updatedProducts = this.products().map(p => p.category === oldName ? { ...p, category: newName } : p);
+
+    const batch = writeBatch(this.firestore.getDb());
+    this.products().forEach(p => {
+      if (p.category === oldName) {
+        const docRef = doc(this.firestore.getDb(), 'products', p.id);
+        batch.update(docRef, { category: newName });
+      }
+    });
+    try {
+      await batch.commit();
+    } catch (error) {
+      console.error('Firestore updateCategoryName failed:', error);
+    }
+    
+    // Optimistic UI update
+    this.products.set(updatedProducts);
+  }
+
+  async bulkUpdatePrices(
+    type: 'category' | 'brand',
+    name: string,
+    updateType: 'percent' | 'flat',
+    direction: 'increase' | 'decrease',
+    value: number
+  ): Promise<number> {
+    let updatedCount = 0;
+    const batch = writeBatch(this.firestore.getDb());
+    
+    const updatedProducts = this.products().map(p => {
+      let productMatches = false;
+      if ((type === 'category' && p.category === name) || (type === 'brand' && p.brand === name)) {
+        productMatches = true;
+      }
+
+      if (productMatches) {
+        let newPrice = p.price;
+        if (updateType === 'percent') {
+          const change = p.originalPrice * (value / 100);
+          newPrice = direction === 'increase' ? p.price + change : p.price - change;
+        } else { // flat amount
+          newPrice = direction === 'increase' ? p.price + value : p.price - value;
+        }
+
+        const finalPrice = Math.round(Math.max(1, Math.min(newPrice, p.originalPrice)));
+
+        if (finalPrice !== p.price) {
+          const newDiscount = Math.round(((p.originalPrice - finalPrice) / p.originalPrice) * 100);
+          const updatedProduct = { ...p, price: finalPrice, discount: newDiscount };
+          
+          const docRef = doc(this.firestore.getDb(), 'products', p.id);
+          batch.update(docRef, { price: finalPrice, discount: newDiscount });
+          
+          updatedCount++;
+          return updatedProduct;
+        }
+      }
+      return p;
+    });
+
+    if (updatedCount > 0) {
+      try {
+        await batch.commit();
+      } catch (error) {
+        console.error('Firestore bulkUpdatePrices failed:', error);
+      }
+      // Optimistic UI update
+      this.products.set(updatedProducts);
+    }
+    
+    return updatedCount;
+  }
+  
+  private getMockProducts(): Product[] {
+     return [
     // Men
     {
       id: '1',
@@ -198,581 +353,18 @@ export class ProductService {
       b2bPrice: 800,
       discount: 55,
       rating: 4.2,
-      reviews: 18000,
-      images: ['https://picsum.photos/id/601/400/600', 'https://picsum.photos/id/602/400/600'],
-      sizes: [ { name: '28', inStock: true }, { name: '30', inStock: false }, { name: '32', inStock: true }, { name: '34', inStock: true }, ],
-      details: ['Classic blue wash', '5-pocket design', 'Stretchable denim'],
-      fit: 'Skinny Fit',
-      fabric: 'Cotton, Elastane',
-      category: 'Women',
-      tags: ['jeans', 'denim', 'pants', 'bottoms', 'blue', 'women apparel', 'skinny'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: '10',
-      name: 'Women Solid A-Line Kurta',
-      brand: 'W',
-      price: 1299,
-      originalPrice: 2599,
-      b2bPrice: 1150,
-      discount: 50,
-      rating: 4.4,
-      reviews: 4500,
-      images: ['https://picsum.photos/id/411/400/600', 'https://picsum.photos/id/412/400/600'],
-      sizes: [ { name: 'M', inStock: true }, { name: 'L', inStock: false }, { name: 'XL', inStock: true }, { name: 'XXL', inStock: true }, ],
-      details: ['Elegant solid kurta', 'Three-quarter sleeves', 'Mandarin collar'],
-      fit: 'A-Line',
-      fabric: 'Viscose Rayon',
-      category: 'Women',
-      tags: ['kurta', 'ethnic', 'traditional', 'indian wear', 'women apparel', 'a-line'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: true,
-    },
-    {
-      id: '13',
-      name: 'Solid Heeled Boots',
-      brand: 'DressBerry',
-      price: 1499,
-      originalPrice: 2999,
-      b2bPrice: 1300,
-      discount: 50,
-      rating: 4.5,
-      reviews: 3200,
-      images: ['https://picsum.photos/id/621/400/600', 'https://picsum.photos/id/622/400/600'],
-      sizes: [ { name: '37', inStock: true }, { name: '38', inStock: true }, { name: '39', inStock: false }, ],
-      details: ['Tan brown solid boots', 'Side zip closure', 'Block heels'],
-      fit: 'Regular',
-      fabric: 'Synthetic',
-      category: 'Women',
-      tags: ['shoes', 'footwear', 'boots', 'heels', 'brown', 'tan', 'women footwear'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: '14',
-      name: 'Women Embellished Saree',
-      brand: 'KALINI',
-      price: 999,
-      originalPrice: 2499,
-      b2bPrice: 850,
-      discount: 60,
-      rating: 4.1,
-      reviews: 1500,
-      images: ['https://picsum.photos/id/431/400/600', 'https://picsum.photos/id/432/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['Elegant embellished saree', 'Comes with a blouse piece', 'Perfect for festive occasions'],
-      fit: 'Regular',
-      fabric: 'Georgette',
-      category: 'Women',
-      tags: ['saree', 'sari', 'ethnic', 'traditional', 'indian wear', 'women apparel', 'embellished'],
-      isCodAvailable: false,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    // Kids
-    {
-      id: '7',
-      name: 'Boys Printed T-shirt',
-      brand: 'Gini & Jony',
-      price: 349,
-      originalPrice: 499,
-      b2bPrice: 300,
-      discount: 30,
-      rating: 4.5,
-      reviews: 500,
-      images: ['https://picsum.photos/id/1/400/600', 'https://picsum.photos/id/2/400/600'],
-      sizes: [ { name: '2-3Y', inStock: true }, { name: '3-4Y', inStock: true }, { name: '4-5Y', inStock: true }, ],
-      details: ['Fun graphic print', 'Round neck', 'Comfortable cotton'],
-      fit: 'Regular Fit',
-      fabric: '100% Cotton',
-      category: 'Kids',
-      tags: ['tshirt', 't-shirt', 'tee', 'top', 'kids apparel', 'boys wear', 'graphic'],
-      isCodAvailable: true,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: '8',
-      name: 'Girls Embellished Dress',
-      brand: 'Cutecumber',
-      price: 1499,
-      originalPrice: 2499,
-      b2bPrice: 1350,
-      discount: 40,
-      rating: 4.6,
-      reviews: 350,
-      images: ['https://picsum.photos/id/103/400/600', 'https://picsum.photos/id/104/400/600'],
-      sizes: [ { name: '5-6Y', inStock: true }, { name: '6-7Y', inStock: false }, { name: '7-8Y', inStock: true }, ],
-      details: ['Party wear dress', 'Sequin details', 'Net fabric overlay'],
-      fit: 'Regular Fit',
-      fabric: 'Polyester',
-      category: 'Kids',
-      tags: ['dress', 'frock', 'party wear', 'kids apparel', 'girls wear', 'embellished'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: true,
-    },
-     {
-      id: '15',
-      name: 'Unisex Dino Print Sneakers',
-      brand: 'YK',
-      price: 799,
-      originalPrice: 1299,
-      b2bPrice: 720,
-      discount: 38,
-      rating: 4.7,
-      reviews: 450,
-      images: ['https://picsum.photos/id/161/400/600', 'https://picsum.photos/id/162/400/600'],
-      sizes: [ { name: 'C7', inStock: true }, { name: 'C8', inStock: true }, { name: 'C9', inStock: true }, ],
-      details: ['Fun dinosaur print', 'Velcro closure for easy wear', 'Comfortable for all-day play'],
-      fit: 'Regular',
-      fabric: 'Canvas',
-      category: 'Kids',
-      tags: ['shoes', 'footwear', 'sneakers', 'kids footwear', 'unisex', 'dinosaur'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: '16',
-      name: 'Girls Printed Leggings',
-      brand: 'Mothercare',
-      price: 599,
-      originalPrice: 799,
-      b2bPrice: 540,
-      discount: 25,
-      rating: 4.4,
-      reviews: 200,
-      images: ['https://picsum.photos/id/123/400/600', 'https://picsum.photos/id/124/400/600'],
-      sizes: [ { name: '1-2Y', inStock: true }, { name: '2-3Y', inStock: true }, { name: '3-4Y', inStock: false }, ],
-      details: ['Cute all-over print', 'Elasticated waistband', 'Soft and stretchable fabric'],
-      fit: 'Regular',
-      fabric: 'Cotton Blend',
-      category: 'Kids',
-      tags: ['leggings', 'bottoms', 'pants', 'kids apparel', 'girls wear'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: '17',
-      name: 'Boys Pack of 2 Shorts',
-      brand: 'Allen Solly Junior',
-      price: 899,
-      originalPrice: 1499,
-      b2bPrice: 810,
-      discount: 40,
-      rating: 4.5,
-      reviews: 600,
-      images: ['https://picsum.photos/id/55/400/600', 'https://picsum.photos/id/56/400/600'],
-      sizes: [ { name: '7-8Y', inStock: true }, { name: '8-9Y', inStock: true }, { name: '9-10Y', inStock: true }, ],
-      details: ['Pack contains two pairs of shorts', 'Drawstring waist', 'Ideal for summer wear'],
-      fit: 'Regular Fit',
-      fabric: '100% Cotton',
-      category: 'Kids',
-      tags: ['shorts', 'bottoms', 'pack', 'combo', 'kids apparel', 'boys wear'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    // Electronics
-    {
-      id: 'E1',
-      name: 'Premium Tempered Glass Screen Protector',
-      brand: 'ScreenGuard',
-      price: 299,
-      originalPrice: 599,
-      discount: 50,
-      rating: 4.5,
       reviews: 15000,
-      images: ['https://picsum.photos/seed/glass/400/600', 'https://picsum.photos/seed/glass2/400/600'],
-      sizes: [ { name: 'iPhone 15', inStock: true }, { name: 'Samsung S24', inStock: true }, { name: 'OnePlus 12', inStock: false } ],
-      details: ['9H Hardness for superior scratch resistance', 'Oleophobic coating to reduce fingerprints', 'Easy installation kit included', 'Ultra-clear with 99.9% transparency'],
-      fit: 'N/A',
-      fabric: 'Glass',
-      category: 'Electronics',
-      tags: ['screen protector', 'tempered glass', 'mobile accessories'],
+      images: ['https://picsum.photos/id/601/400/600', 'https://picsum.photos/id/602/400/600'],
+      sizes: [ { name: '28', inStock: true }, { name: '30', inStock: true }, { name: '32', inStock: false } ],
+      details: ['Blue medium wash 5-pocket jeans', 'High-rise, skinny fit', 'Stretchable denim'],
+      fit: 'Skinny Fit',
+      fabric: 'Cotton Blend',
+      category: 'Women',
+      tags: ['jeans', 'denim', 'pants', 'bottoms', 'blue', 'women apparel'],
       isCodAvailable: true,
       allowPhotoUpload: false,
       preorderAvailable: false,
     },
-    {
-      id: 'E2',
-      name: 'Matte Silicone Protective Case',
-      brand: 'Caseify',
-      price: 499,
-      originalPrice: 999,
-      discount: 50,
-      rating: 4.6,
-      reviews: 22000,
-      images: ['https://picsum.photos/seed/caseblack/400/600', 'https://picsum.photos/seed/casered/400/600'],
-      sizes: [ { name: 'iPhone 15', inStock: true }, { name: 'Samsung S24', inStock: true }, { name: 'iPhone 15 Pro', inStock: false } ],
-      details: ['Soft-touch matte finish', 'Shock-absorbent TPU material', 'Slim profile and lightweight design', 'Raised edges for screen and camera protection'],
-      fit: 'N/A',
-      fabric: 'Silicone/TPU',
-      category: 'Electronics',
-      tags: ['phone case', 'cover', 'mobile accessories', 'silicone case'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: 'E3',
-      name: '45W GaN Fast Charger Adapter',
-      brand: 'ChargeFast',
-      price: 1299,
-      originalPrice: 2499,
-      discount: 48,
-      rating: 4.8,
-      reviews: 8000,
-      images: ['https://picsum.photos/seed/charger/400/600', 'https://picsum.photos/seed/charger2/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['45W Power Delivery for rapid charging', 'Compact GaN technology for portability', 'Single USB-C Port', 'Universal compatibility with smartphones, tablets, and laptops'],
-      fit: 'N/A',
-      fabric: 'Plastic',
-      category: 'Electronics',
-      tags: ['charger', 'adapter', 'fast charging', 'mobile accessories'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: true,
-    },
-    {
-      id: 'E4',
-      name: 'AirBuds Pro 2 Wireless Earbuds',
-      brand: 'SoundWave',
-      price: 2499,
-      originalPrice: 4999,
-      discount: 50,
-      rating: 4.4,
-      reviews: 19500,
-      images: ['https://picsum.photos/seed/earbuds/400/600', 'https://picsum.photos/seed/earbuds2/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['Active Noise Cancellation (ANC)', 'Up to 24 hours total battery life with charging case', 'IPX4 sweat and water resistant', 'Bluetooth 5.3 connectivity'],
-      fit: 'N/A',
-      fabric: 'Plastic',
-      category: 'Electronics',
-      tags: ['earbuds', 'tws', 'headphones', 'audio', 'wireless'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: 'E5',
-      name: 'Pulse 2 Smartwatch',
-      brand: 'FitTrack',
-      price: 3499,
-      originalPrice: 6999,
-      discount: 50,
-      rating: 4.3,
-      reviews: 12000,
-      images: ['https://picsum.photos/seed/watch/400/600', 'https://picsum.photos/seed/watch2/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['Large 1.8-inch AMOLED Display', 'Continuous Heart Rate & SpO2 Monitoring', 'Over 100 sports modes', 'Up to 10-day battery life on a single charge'],
-      fit: 'N/A',
-      fabric: 'Silicone Strap, Metal Case',
-      category: 'Electronics',
-      tags: ['smartwatch', 'wearable', 'fitness tracker', 'watch'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: 'E6',
-      name: '20000mAh Power Bank',
-      brand: 'PowerUp',
-      price: 1899,
-      originalPrice: 3499,
-      discount: 46,
-      rating: 4.6,
-      reviews: 11500,
-      images: ['https://picsum.photos/seed/powerbank/400/600', 'https://picsum.photos/seed/powerbank2/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['High capacity 20000mAh battery', 'Dual USB-A and single USB-C output', '22.5W fast charging support', 'LED battery indicator'],
-      fit: 'N/A',
-      fabric: 'Plastic',
-      category: 'Electronics',
-      tags: ['power bank', 'portable charger', 'battery', 'mobile accessories'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: 'E7',
-      name: 'Braided USB-C to USB-C Cable',
-      brand: 'CablePro',
-      price: 399,
-      originalPrice: 799,
-      discount: 50,
-      rating: 4.7,
-      reviews: 9800,
-      images: ['https://picsum.photos/seed/cable/400/600', 'https://picsum.photos/seed/cable2/400/600'],
-      sizes: [ { name: '1.5m', inStock: true }, { name: '2m', inStock: true } ],
-      details: ['Durable nylon braided design', 'Supports up to 100W Power Delivery', '480Mbps data transfer speed', 'Reinforced connectors for longevity'],
-      fit: 'N/A',
-      fabric: 'Nylon/Metal',
-      category: 'Electronics',
-      tags: ['usb cable', 'type c', 'charging cable', 'mobile accessories'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: 'E8',
-      name: 'Dual Port Fast Car Charger',
-      brand: 'AutoCharge',
-      price: 699,
-      originalPrice: 1299,
-      discount: 46,
-      rating: 4.5,
-      reviews: 7200,
-      images: ['https://picsum.photos/seed/carcharger/400/600', 'https://picsum.photos/seed/carcharger2/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['One USB-A and one USB-C port', '30W total output for fast charging', 'Compact design fits flush with dashboard', 'Built-in safety protections'],
-      fit: 'N/A',
-      fabric: 'Metal/Plastic',
-      category: 'Electronics',
-      tags: ['car charger', 'mobile accessories', 'fast charging'],
-      isCodAvailable: true,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    // Customize Gift
-    {
-      id: 'CG1',
-      name: 'Personalized Photo Mug',
-      brand: 'Printly',
-      price: 499,
-      originalPrice: 799,
-      discount: 38,
-      rating: 4.8,
-      reviews: 2500,
-      images: ['https://picsum.photos/seed/mug/400/600', 'https://picsum.photos/seed/mug2/400/600'],
-      sizes: [ { name: '11oz', inStock: true } ],
-      details: ['White ceramic mug', 'High-quality photo printing', 'Microwave and dishwasher safe'],
-      fit: 'N/A',
-      fabric: 'Ceramic',
-      category: 'Customize Gift',
-      tags: ['mug', 'coffee mug', 'custom', 'personalized', 'photo gift'],
-      isCodAvailable: false,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG2',
-      name: 'Custom Engraved Keychain',
-      brand: 'Keepsake Co.',
-      price: 349,
-      originalPrice: 599,
-      discount: 42,
-      rating: 4.7,
-      reviews: 1800,
-      images: ['https://picsum.photos/seed/keychain/400/600', 'https://picsum.photos/seed/keychain2/400/600'],
-      sizes: [ { name: 'One Size', inStock: true } ],
-      details: ['Stainless steel keychain', 'Laser engraving for text or simple logos', 'Durable and rust-proof'],
-      fit: 'N/A',
-      fabric: 'Metal',
-      category: 'Customize Gift',
-      tags: ['keychain', 'engraved', 'custom', 'personalized', 'gift'],
-      isCodAvailable: false,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG3',
-      name: 'Personalized T-Shirt with Photo',
-      brand: 'TeeStyle',
-      price: 599,
-      originalPrice: 999,
-      discount: 40,
-      rating: 4.5,
-      reviews: 3200,
-      images: ['https://picsum.photos/seed/customtee/400/600', 'https://picsum.photos/seed/customtee2/400/600'],
-      sizes: [ { name: 'S', inStock: true }, { name: 'M', inStock: true }, { name: 'L', inStock: true }, { name: 'XL', inStock: true } ],
-      details: ['100% Cotton T-shirt', 'Vibrant, long-lasting print', 'Unisex fit'],
-      fit: 'Regular Fit',
-      fabric: '100% Cotton',
-      category: 'Customize Gift',
-      tags: ['tshirt', 'custom t-shirt', 'photo t-shirt', 'personalized apparel'],
-      isCodAvailable: false,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG4',
-      name: 'Custom Name Necklace',
-      brand: 'JewelCraft',
-      price: 899,
-      originalPrice: 1499,
-      discount: 40,
-      rating: 4.9,
-      reviews: 4500,
-      images: ['https://picsum.photos/seed/necklace/400/600', 'https://picsum.photos/seed/necklace2/400/600'],
-      sizes: [ { name: '18 inch', inStock: true } ],
-      details: ['Gold-plated sterling silver', 'Customizable with any name up to 10 letters', 'Elegant font style'],
-      fit: 'N/A',
-      fabric: 'Metal',
-      category: 'Customize Gift',
-      tags: ['necklace', 'jewelry', 'custom name', 'personalized gift'],
-      isCodAvailable: false,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG5',
-      name: 'Personalized Photo Frame',
-      brand: 'FrameIt',
-      price: 799,
-      originalPrice: 1299,
-      discount: 38,
-      rating: 4.6,
-      reviews: 1500,
-      images: ['https://picsum.photos/seed/frame/400/600', 'https://picsum.photos/seed/frame2/400/600'],
-      sizes: [ { name: '8x10', inStock: true } ],
-      details: ['Wooden frame with glass front', 'Holds a 5x7 photo', 'Can be engraved with a custom message'],
-      fit: 'N/A',
-      fabric: 'Wood',
-      category: 'Customize Gift',
-      tags: ['photo frame', 'custom frame', 'engraved gift', 'home decor'],
-      isCodAvailable: false,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG6',
-      name: 'Custom Jigsaw Puzzle from Photo',
-      brand: 'PuzzleMe',
-      price: 999,
-      originalPrice: 1599,
-      discount: 38,
-      rating: 4.7,
-      reviews: 950,
-      images: ['https://picsum.photos/seed/puzzle/400/600', 'https://picsum.photos/seed/puzzle2/400/600'],
-      sizes: [ { name: '500 pieces', inStock: true } ],
-      details: ['Create a unique jigsaw puzzle from your favorite photo', 'High-quality cardboard pieces', 'Comes in a custom box with the photo on top'],
-      fit: 'N/A',
-      fabric: 'Cardboard',
-      category: 'Customize Gift',
-      tags: ['puzzle', 'jigsaw puzzle', 'photo gift', 'custom game'],
-      isCodAvailable: false,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG7',
-      name: 'Personalized Mobile Phone Case',
-      brand: 'CaseArt',
-      price: 549,
-      originalPrice: 899,
-      discount: 39,
-      rating: 4.4,
-      reviews: 2100,
-      images: ['https://picsum.photos/seed/case/400/600', 'https://picsum.photos/seed/case2/400/600'],
-      sizes: [ { name: 'iPhone 14', inStock: true }, { name: 'Galaxy S23', inStock: true } ],
-      details: ['Durable hard plastic case', 'Full-wrap, high-resolution printing', 'Supports various phone models (mention in order)'],
-      fit: 'N/A',
-      fabric: 'Plastic',
-      category: 'Customize Gift',
-      tags: ['phone case', 'custom case', 'mobile cover', 'photo gift'],
-      isCodAvailable: false,
-      allowPhotoUpload: true,
-      preorderAvailable: false,
-    },
-    {
-      id: 'CG8',
-      name: 'Custom Star Map Frame',
-      brand: 'StarryNight',
-      price: 1299,
-      originalPrice: 1999,
-      discount: 35,
-      rating: 4.9,
-      reviews: 3100,
-      images: ['https://picsum.photos/seed/starmap/400/600', 'https://picsum.photos/seed/starmap2/400/600'],
-      sizes: [ { name: 'A4', inStock: true } ],
-      details: ['A map of the stars on a specific date and location', 'Perfect for anniversaries and birthdays', 'Printed on high-quality art paper with a black frame'],
-      fit: 'N/A',
-      fabric: 'Paper/Wood',
-      category: 'Customize Gift',
-      tags: ['star map', 'anniversary gift', 'custom print', 'wall art'],
-      isCodAvailable: false,
-      allowPhotoUpload: false,
-      preorderAvailable: false,
-    }
-  ];
-
-  getAllProducts(): Product[] {
-    return this.products;
-  }
-
-  getProducts(category: string | null): Product[] {
-    if (!category) {
-        return this.products;
-    }
-    return this.products.filter(p => p.category === category);
-  }
-
-  getProductById(id: string): Product | undefined {
-    return this.products.find((p) => p.id === id);
-  }
-
-  addProduct(product: Omit<Product, 'id'>) {
-    const newProduct: Product = {
-      ...product,
-      id: `prod_${Date.now()}`,
-    };
-    this.products.unshift(newProduct);
-  }
-
-  updateProduct(updatedProduct: Product) {
-    const index = this.products.findIndex(p => p.id === updatedProduct.id);
-    if (index > -1) {
-      this.products[index] = updatedProduct;
-    }
-  }
-
-  deleteProduct(productId: string) {
-    this.products = this.products.filter(p => p.id !== productId);
-  }
-
-  updateCategoryName(oldName: string, newName: string) {
-    this.products.forEach(p => {
-      if (p.category === oldName) {
-        p.category = newName;
-      }
-    });
-  }
-
-  bulkUpdatePrices(
-    type: 'category' | 'brand',
-    name: string,
-    updateType: 'percent' | 'flat',
-    direction: 'increase' | 'decrease',
-    value: number
-  ): number {
-    let updatedCount = 0;
-    this.products.forEach(p => {
-      if ((type === 'category' && p.category === name) || (type === 'brand' && p.brand === name)) {
-        let newPrice = p.price;
-        if (updateType === 'percent') {
-          const change = p.originalPrice * (value / 100);
-          newPrice = direction === 'increase' ? p.price + change : p.price - change;
-        } else { // flat amount
-          newPrice = direction === 'increase' ? p.price + value : p.price - value;
-        }
-
-        // Ensure price doesn't go below 0 or above original price
-        p.price = Math.max(1, Math.min(newPrice, p.originalPrice));
-        p.price = Math.round(p.price);
-
-        // Recalculate discount
-        p.discount = Math.round(((p.originalPrice - p.price) / p.originalPrice) * 100);
-        
-        updatedCount++;
-      }
-    });
-    return updatedCount;
+   ];
   }
 }

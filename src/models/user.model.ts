@@ -4,7 +4,6 @@ export interface User {
   name: string;
   email: string;
   mobile: string;
-  password?: string;
   isVerified: boolean;
   walletBalance: number;
   isBlacklisted: boolean;
@@ -14,4 +13,5 @@ export interface User {
   referralCode?: string;
   referredBy?: string;
   photoUrl?: string;
+  wishlist?: string[];
 }

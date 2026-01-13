@@ -1,10 +1,10 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StateService } from '../../../services/state.service';
 import { User } from '../../../models/user.model';
 import { ProductService } from '../../../services/product.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-users',
@@ -50,6 +50,10 @@ export class AdminUsersComponent {
     });
     return counts;
   });
+
+  isAdminUser(user: User): boolean {
+    return environment.adminEmails.includes(user.email);
+  }
 
   getReferrerName(user: User): string {
     if (!user.referredBy) return 'N/A';

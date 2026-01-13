@@ -4,7 +4,7 @@
   <!-- Mobile Card View -->
   <div class="space-y-4 lg:hidden">
     @for(user of users(); track user.id) {
-       @if(user.id !== '1') {
+       @if(!isAdminUser(user)) {
         <div class="bg-white rounded-lg shadow p-4 space-y-3">
           <div class="flex justify-between items-start">
             <div>
@@ -61,7 +61,7 @@
       </thead>
       <tbody class="text-gray-700">
         @for(user of users(); track user.id) {
-          @if(user.id !== '1') {
+          @if(!isAdminUser(user)) {
             <tr class="border-b border-gray-200 hover:bg-gray-100">
               <td class="py-3 px-5">
                 <p class="font-semibold">{{ user.name }}</p>

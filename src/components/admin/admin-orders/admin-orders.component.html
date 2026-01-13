@@ -1,30 +1,43 @@
 <div>
-  <h1 class="text-3xl font-bold mb-6">Manage Orders</h1>
+  <div class="flex flex-col md:flex-row justify-between md:items-center mb-6 gap-4">
+    <h1 class="text-3xl font-bold">Manage Orders</h1>
+    <div class="flex items-center gap-4">
+       <select [(ngModel)]="statusFilter" (ngModelChange)="statusFilter.set($event)" class="border rounded-md p-2 bg-white w-full md:w-auto">
+        <option value="all">All Statuses</option>
+        @for(status of orderStatuses; track status) {
+          <option [value]="status">{{ status }}</option>
+        }
+      </select>
+      <input [(ngModel)]="searchQuery" (ngModelChange)="searchQuery.set($event)" type="text" placeholder="Search by Order ID or Customer..." class="w-full px-4 py-2 border rounded-md">
+    </div>
+  </div>
   
   <!-- Mobile Card View -->
   <div class="space-y-4 lg:hidden">
-    @for(order of orders(); track order.id) {
-      <div class="bg-white rounded-lg shadow p-4 space-y-3">
-        <div>
-          <h2 class="font-bold text-sm">Order #{{ order.id }}</h2>
-          <p class="text-xs text-gray-500">{{ order.date | date: 'medium' }}</p>
+    @for(order of filteredOrders(); track order.id) {
+       @if(getUserForOrder(order); as user) {
+        <div class="bg-white rounded-lg shadow p-4 space-y-3">
+          <div>
+            <h2 class="font-bold text-sm">Order #{{ order.id }}</h2>
+            <p class="text-xs text-gray-500">{{ order.date | date: 'medium' }}</p>
+          </div>
+          <div class="text-sm space-y-1 border-t pt-3">
+            <div class="flex justify-between"><span class="text-gray-500">Customer:</span> <span class="font-semibold">{{ user.name }}</span></div>
+            <div class="flex justify-between"><span class="text-gray-500">Total:</span> <span class="font-semibold">₹{{ order.totalAmount | number }}</span></div>
+          </div>
+          <div class="text-sm space-y-2 border-t pt-3">
+            <label class="font-semibold text-gray-700">Status:</label>
+            <select [value]="order.status" (change)="updateStatus(order.id, $event)" class="w-full border rounded-md p-2 bg-white text-sm">
+              @for(status of orderStatuses; track status) {
+                <option [value]="status">{{ status }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex justify-end space-x-2 border-t pt-3">
+            <button (click)="viewDetails(order)" class="bg-blue-100 text-blue-700 font-bold py-2 px-4 rounded-lg text-sm">View Details</button>
+          </div>
         </div>
-        <div class="text-sm space-y-1 border-t pt-3">
-          <div class="flex justify-between"><span class="text-gray-500">Customer:</span> <span class="font-semibold">{{ order.shippingAddress.name }}</span></div>
-          <div class="flex justify-between"><span class="text-gray-500">Total:</span> <span class="font-semibold">₹{{ order.totalAmount | number }}</span></div>
-        </div>
-         <div class="text-sm space-y-2 border-t pt-3">
-          <label class="font-semibold text-gray-700">Status:</label>
-          <select [value]="order.status" (change)="updateStatus(order.id, $event)" class="w-full border rounded-md p-2 bg-white text-sm">
-            @for(status of orderStatuses; track status) {
-              <option [value]="status">{{ status }}</option>
-            }
-          </select>
-        </div>
-        <div class="flex justify-end space-x-2 border-t pt-3">
-           <button (click)="printInvoice(order.id)" class="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg text-sm">Invoice</button>
-        </div>
-      </div>
+      }
     } @empty {
       <p class="text-center py-10 text-gray-500">No orders found.</p>
     }
@@ -44,29 +57,101 @@
         </tr>
       </thead>
       <tbody class="text-gray-700">
-        @for(order of orders(); track order.id) {
-          <tr class="border-b border-gray-200 hover:bg-gray-100">
-            <td class="py-3 px-5 font-mono text-xs">{{ order.id }}</td>
-            <td class="py-3 px-5">{{ order.date | date: 'short' }}</td>
-            <td class="py-3 px-5">{{ order.shippingAddress.name }}</td>
-            <td class="py-3 px-5 font-semibold">₹{{ order.totalAmount | number }}</td>
-            <td class="py-3 px-5 text-center">
-              <select [value]="order.status" (change)="updateStatus(order.id, $event)" class="border rounded-md p-1 bg-white">
-                @for(status of orderStatuses; track status) {
-                  <option [value]="status">{{ status }}</option>
-                }
-              </select>
-            </td>
-            <td class="py-3 px-5 text-center">
-              <button (click)="printInvoice(order.id)" class="text-indigo-600 hover:text-indigo-900">Invoice</button>
-            </td>
-          </tr>
+        @for(order of filteredOrders(); track order.id) {
+           @if(getUserForOrder(order); as user) {
+            <tr class="border-b border-gray-200 hover:bg-gray-100">
+              <td class="py-3 px-5 font-mono text-xs">{{ order.id }}</td>
+              <td class="py-3 px-5">{{ order.date | date: 'short' }}</td>
+              <td class="py-3 px-5">{{ user.name }}</td>
+              <td class="py-3 px-5 font-semibold">₹{{ order.totalAmount | number }}</td>
+              <td class="py-3 px-5 text-center">
+                <select [value]="order.status" (change)="updateStatus(order.id, $event)" class="border rounded-md p-1 bg-white">
+                  @for(status of orderStatuses; track status) {
+                    <option [value]="status">{{ status }}</option>
+                  }
+                </select>
+              </td>
+              <td class="py-3 px-5 text-center">
+                <button (click)="viewDetails(order)" class="text-indigo-600 hover:text-indigo-900">View Details</button>
+              </td>
+            </tr>
+          }
         } @empty {
           <tr>
-            <td colspan="6" class="text-center py-10">No orders found.</td>
+            <td colspan="6" class="text-center py-10">No orders found for the selected criteria.</td>
           </tr>
         }
       </tbody>
     </table>
   </div>
+
+  <!-- Order Details Modal -->
+  @if (selectedOrder(); as order) {
+    <div class="fixed inset-0 bg-black bg-opacity-60 z-50 flex items-center justify-center p-4" (click)="closeDetails()">
+      <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="p-4 border-b flex justify-between items-center">
+          <h2 class="text-xl font-bold">Order Details</h2>
+          <button (click)="closeDetails()" class="text-gray-500 hover:text-gray-800">&times;</button>
+        </div>
+        
+        <!-- Modal Body -->
+        <div class="p-6 overflow-y-auto space-y-6">
+          <!-- Order & Customer Info -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-gray-800 mb-2">Order Information</h3>
+              <p><strong>ID:</strong> <span class="font-mono text-xs">{{ order.id }}</span></p>
+              <p><strong>Date:</strong> {{ order.date | date:'full' }}</p>
+              <p><strong>Total:</strong> <span class="font-bold">₹{{ order.totalAmount | number }}</span></p>
+              <p><strong>Status:</strong> <span class="font-semibold">{{ order.status }}</span></p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <h3 class="font-bold text-gray-800 mb-2">Customer & Shipping</h3>
+              <p><strong>Name:</strong> {{ order.shippingAddress.name }}</p>
+              <p><strong>Mobile:</strong> {{ order.shippingAddress.mobile }}</p>
+              <p><strong>Address:</strong> {{ order.shippingAddress.address }}, {{ order.shippingAddress.locality }}, {{ order.shippingAddress.city }}, {{ order.shippingAddress.state }} - {{ order.shippingAddress.pincode }}</p>
+            </div>
+          </div>
+
+          <!-- Items List -->
+          <div>
+            <h3 class="font-bold text-gray-800 mb-2">Items Ordered</h3>
+            <div class="space-y-4">
+              @for(item of order.items; track item.id) {
+                <div class="flex items-start space-x-4 border p-3 rounded-lg">
+                  <img [ngSrc]="item.product.images[0]" [alt]="item.product.name" width="80" height="107" class="w-20 h-auto object-cover rounded-md flex-shrink-0">
+                  <div class="flex-grow">
+                    <p class="font-bold">{{ item.product.name }}</p>
+                    <p class="text-xs text-gray-500">{{ item.product.brand }}</p>
+                    <p class="text-sm"><strong>Size:</strong> {{ item.size }} | <strong>Qty:</strong> {{ item.quantity }}</p>
+                    <p class="font-semibold"><strong>Price:</strong> ₹{{ item.price }}</p>
+                  </div>
+                  @if (item.customization; as custom) {
+                    <div class="w-32 text-center flex-shrink-0">
+                      <p class="font-bold text-sm mb-2 text-pink-600">Custom Photo</p>
+                      <img [src]="custom.photoPreviewUrl" alt="Customization photo" class="w-full h-auto object-cover rounded-md mb-2 border-2 border-pink-200">
+                      <a [href]="custom.photoPreviewUrl" [download]="custom.fileName" class="inline-block bg-green-500 text-white text-xs font-bold py-1 px-3 rounded-lg hover:bg-green-600">
+                        Download Photo
+                      </a>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        </div>
+        
+        <!-- Modal Footer -->
+        <div class="p-4 border-t bg-gray-50 flex justify-between items-center">
+          <div class="flex space-x-2">
+            <button (click)="printDocument(order, 'invoice')" class="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 text-sm">Download Invoice</button>
+            <button (click)="printDocument(order, 'label')" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 text-sm">Print Label</button>
+            <button (click)="copyForShiprocket(order)" class="bg-orange-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-orange-600 text-sm">Copy for Shiprocket</button>
+          </div>
+          <button (click)="closeDetails()" class="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300">Close</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

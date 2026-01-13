@@ -6,8 +6,6 @@ import { Product } from '../../models/product.model';
 
 @Component({
   selector: 'app-wishlist',
-  // FIX: Implement the WishlistComponent with an inline template.
-  // The original file was empty, which caused the module import to fail.
   template: `
     <div class="p-4 md:p-6 lg:p-8 max-w-6xl mx-auto">
       <h1 class="text-2xl font-bold mb-6">My Wishlist ({{ wishlistProducts().length }} items)</h1>
@@ -23,7 +21,7 @@ import { Product } from '../../models/product.model';
                 </button>
               </div>
               <div class="aspect-[2/3] overflow-hidden cursor-pointer" (click)="viewProduct(product.id)">
-                <img [ngSrc]="product.images[0]" [alt]="product.name" width="200" height="300" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" [priority]="i < 2">
+                <img [ngSrc]="product.images[0]" [alt]="product.name" width="200" height="300" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" [priority]="i < 4">
               </div>
               <div class="p-3 bg-white dark:bg-gray-800 flex-grow flex flex-col">
                 <h3 class="font-bold text-sm truncate text-gray-800 dark:text-gray-100">{{ product.brand }}</h3>

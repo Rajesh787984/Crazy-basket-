@@ -42,6 +42,41 @@ export class TranslationService {
         approved: 'Approved',
         rejected: 'Rejected'
       }
+    },
+    hi: {
+      nav: {
+        home: 'होम',
+        categories: 'श्रेणियाँ',
+        wishlist: 'विशलिस्ट',
+        profile: 'प्रोफ़ाइल',
+      },
+      profile: {
+        edit: 'प्रोफ़ाइल संपादित करें',
+        admin: 'एडमिन पैनल',
+        orders: 'मेरे ऑर्डर',
+        returns: 'रिटर्न और एक्सचेंज',
+        coupons: 'मेरे कूपन',
+        wallet: 'वॉलेट',
+        balance: 'बैलेंस',
+        partner: 'पार्टनर आय कार्यक्रम',
+        addresses: 'पते',
+        language: 'भाषा सेटिंग्स',
+        privacy: 'गोपनीयता नीति',
+        contact: 'हमसे संपर्क करें',
+        faq: 'अक्सर पूछे जाने वाले प्रश्न',
+        logout: 'लॉग आउट करें',
+      },
+      returns: {
+        request_return: 'रिटर्न का अनुरोध करें',
+        reason: 'रिटर्न का कारण',
+        comments: 'टिप्पणियाँ',
+        upload_photo: 'फोटो अपलोड करें',
+        submit_request: 'अनुरोध सबमिट करें',
+        return_status: 'रिटर्न स्थिति',
+        pending: 'लंबित',
+        approved: 'स्वीकृत',
+        rejected: 'अस्वीकृत'
+      }
     }
   };
 

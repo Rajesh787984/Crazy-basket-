@@ -12,7 +12,7 @@ import { Address } from '../../models/address.model';
 })
 export class ManageAddressesComponent {
   stateService: StateService = inject(StateService);
-  addresses = this.stateService.userAddresses;
+  addresses = this.stateService.currentUserAddresses;
 
   addNewAddress() {
     this.stateService.navigateTo('address-form');

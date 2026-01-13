@@ -1,4 +1,3 @@
-
 import { Product } from './product.model';
 import { Address } from './address.model';
 
@@ -11,6 +10,10 @@ export interface OrderItem {
   size: string;
   quantity: number;
   price: number;
+  customization?: {
+    photoPreviewUrl: string;
+    fileName: string;
+  };
   returnRequest?: {
     reason: string;
     comment: string;
