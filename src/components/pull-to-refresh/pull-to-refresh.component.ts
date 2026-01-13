@@ -84,7 +84,8 @@ export class PullToRefreshComponent {
     this.pullPosition.set(resistedDiff);
   }
 
-  onTouchEnd() {
+  // 👇 यहाँ बदलाव किया गया है: (event?: any) जोड़ा गया
+  onTouchEnd(event?: any) {
     if (!this.isDragging() || this.isRefreshing()) return;
 
     this.isDragging.set(false);
