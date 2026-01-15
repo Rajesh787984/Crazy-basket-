@@ -8,18 +8,6 @@ export interface RecommendationResponse {
   reasoning: string;
 }
 
-// ==================================================================================
-// IMPORTANT: GEMINI API KEY
-// ==================================================================================
-// The Gemini API key was not configured, which would cause the app to crash when
-// accessing AI features. I've added a placeholder below to prevent this.
-//
-// PLEASE REPLACE this placeholder value with your actual Gemini API key to enable
-// the AI Style Helper feature.
-// ==================================================================================
-const GEMINI_API_KEY = "YOUR_GEMINI_API_KEY_HERE";
-
-
 @Injectable({
   providedIn: 'root',
 })
@@ -27,16 +15,15 @@ export class GeminiService {
   private ai: GoogleGenAI | null = null;
 
   constructor() {
-    // The Gemini features will not work until a valid API key is provided.
-    // This prevents the app from crashing if the key is missing.
     try {
-      if (GEMINI_API_KEY && GEMINI_API_KEY !== "YOUR_GEMINI_API_KEY_HERE") {
-        this.ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+      if (process.env.API_KEY) {
+        this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       } else {
-        console.warn("Gemini API key is not configured. AI features will be disabled.");
+        console.warn("Google Gemini API key is not configured in process.env.API_KEY. AI features will be disabled.");
       }
     } catch (e) {
       console.error("Could not initialize Gemini Service:", e);
+      this.ai = null;
     }
   }
 
@@ -47,7 +34,7 @@ export class GeminiService {
   ): Promise<RecommendationResponse[]> {
     if (!this.ai) {
       console.error('Gemini Service is not initialized. Please provide a valid API key.');
-      throw new Error('AI stylist is not available. Please configure the API key.');
+      throw new Error('AI stylist is not available. Please check your API key configuration.');
     }
     
     // Simplify products to only include essential info for the prompt

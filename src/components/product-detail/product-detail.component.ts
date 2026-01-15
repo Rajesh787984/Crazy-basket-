@@ -5,7 +5,8 @@ import { ProductService } from '../../services/product.service';
 import { StateService } from '../../services/state.service';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Review } from '../../models/review.model';
-import { DomSanitizer, SafeResourceUrl, Title, Meta } from '@angular/platform-browser';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { SeoService } from '../../services/seo.service';
 
 
 @Component({
@@ -19,8 +20,7 @@ export class ProductDetailComponent implements OnDestroy {
   stateService: StateService = inject(StateService);
   fb: FormBuilder = inject(FormBuilder);
   sanitizer: DomSanitizer = inject(DomSanitizer);
-  titleService: Title = inject(Title);
-  metaService: Meta = inject(Meta);
+  private seoService: SeoService = inject(SeoService);
 
   product = signal<Product | undefined>(undefined);
   selectedSize = signal<string | null>(null);
@@ -30,7 +30,6 @@ export class ProductDetailComponent implements OnDestroy {
   
   similarProducts = signal<Product[]>([]);
   showReviewForm = signal(false);
-  jsonLdScript = signal<string>('');
   customization = signal<{ file: File, previewUrl: string } | null>(null);
 
   private intervalId?: any;
@@ -96,8 +95,6 @@ export class ProductDetailComponent implements OnDestroy {
   ngOnDestroy() {
     this.stopSlider();
     this.stopCountdown();
-    // Reset meta tags when leaving the page
-    this.titleService.setTitle('Crazy Basket');
   }
 
   toggleAccordion(section: 'details' | 'video' | 'reviews') {
@@ -128,19 +125,23 @@ export class ProductDetailComponent implements OnDestroy {
         if (p.images.length > 1) {
           this.startSlider();
         }
+      } else {
+        // Handle product not found case for SEO
+        this.seoService.updateTitle('Product Not Found');
+        this.seoService.updateDescription('The product you are looking for could not be found.');
+        this.seoService.updateJsonLd(null);
       }
     }
   }
 
   private updateMetaAndJsonLd(product: Product) {
-    // 1. On-Page Optimization (Meta Tags)
-    const title = `${product.name} - Buy Online at Best Price in India | ${product.brand}`;
+    const title = `${product.name} by ${product.brand}`;
     const description = `Buy ${product.name} online at the best price from ${product.brand} on Crazy Basket. ${product.details[0]}. Explore our collection of customized gifts and personalized t-shirts with fast delivery.`;
     
-    this.titleService.setTitle(title);
-    this.metaService.updateTag({ name: 'description', content: description });
+    this.seoService.updateTitle(title);
+    this.seoService.updateDescription(description);
+    this.seoService.updateImageUrl(product.images[0]);
 
-    // 2. Technical SEO & Rich Snippets (JSON-LD)
     const availability = product.sizes.some(s => s.inStock) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
     const jsonLd = {
       '@context': 'https://schema.org',
@@ -155,11 +156,11 @@ export class ProductDetailComponent implements OnDestroy {
       },
       offers: {
         '@type': 'Offer',
-        url: window.location.href, // Or a canonical URL if routing was present
+        url: window.location.href,
         priceCurrency: 'INR',
         price: product.price,
         availability: availability,
-        priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // Valid for 1 year
+        priceValidUntil: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
       },
       aggregateRating: {
         '@type': 'AggregateRating',
@@ -167,7 +168,7 @@ export class ProductDetailComponent implements OnDestroy {
         reviewCount: product.reviews,
       },
     };
-    this.jsonLdScript.set(JSON.stringify(jsonLd));
+    this.seoService.updateJsonLd(jsonLd);
   }
 
   startSlider() {

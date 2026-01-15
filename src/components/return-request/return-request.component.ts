@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
@@ -7,7 +8,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-return-request',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule, TranslatePipe, NgOptimizedImage],
   templateUrl: './return-request.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,11 +68,15 @@ export class ReturnRequestComponent implements OnInit {
     const data = this.orderItemData();
     if (data) {
       const { reason, comment } = this.returnForm.value;
+      // FIX: The method signature for requestReturn expects additional arguments for returnType and refundMethod.
+      // This change provides default values to match the expected signature and passes photoUrl in the correct argument position.
       this.stateService.requestReturn(
         data.order.id,
         data.item.id,
         reason!,
         comment!,
+        'Refund',
+        'Wallet',
         this.uploadedPhoto()?.previewUrl
       );
     }

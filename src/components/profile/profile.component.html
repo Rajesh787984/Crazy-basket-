@@ -1,97 +1,138 @@
 
 
 @if(currentUser(); as user) {
-<div class="bg-gray-100 dark:bg-gray-900 min-h-full">
+<div class="bg-gray-100 dark:bg-gray-900 min-h-full p-4 md:p-6">
   <div class="max-w-4xl mx-auto">
-    <div class="p-4">
+    
+    <!-- Profile Header Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 md:p-6 mb-6 flex flex-col sm:flex-row items-center sm:justify-between">
       <div class="flex items-center space-x-4">
         <img [ngSrc]="user.photoUrl || 'https://picsum.photos/id/237/80/80'" alt="Profile" class="h-20 w-20 rounded-full object-cover" width="80" height="80">
         <div>
-          <h1 class="text-xl font-bold dark:text-gray-100">{{ user.name }}</h1>
-          <div class="flex items-center space-x-2">
-            <p class="text-gray-500 dark:text-gray-400">{{ user.email }}</p>
-            @if (user.isVerified) {
-              <span class="text-xs bg-green-100 text-green-800 font-semibold px-2 py-0.5 rounded-full">Verified</span>
-            } @else {
-              <span class="text-xs bg-yellow-100 text-yellow-800 font-semibold px-2 py-0.5 rounded-full">Not Verified</span>
-            }
-          </div>
+          <h1 class="text-xl font-bold dark:text-gray-100">Welcome, {{ user.name }}</h1>
+          <p class="text-gray-500 dark:text-gray-400 text-sm">{{ user.email }}</p>
         </div>
       </div>
-      <button (click)="stateService.navigateTo('profile-edit')" class="w-full mt-4 text-center py-2 font-bold text-gray-700 border bg-white rounded-lg dark:bg-gray-800 dark:text-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-        {{ 'profile.edit' | translate }}
+      <button (click)="stateService.navigateTo('profile-edit')" class="mt-4 sm:mt-0 w-full sm:w-auto text-center py-2 px-5 font-bold text-pink-600 dark:text-pink-400 border-2 border-pink-500 rounded-lg hover:bg-pink-50 dark:hover:bg-pink-900/50 transition-colors">
+        Edit Profile
       </button>
     </div>
 
-    <div class="px-4 grid grid-cols-1 lg:grid-cols-2 lg:gap-6">
-      <!-- Column 1 -->
-      <div class="space-y-6">
-        @if (stateService.isAdmin()) {
-          <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-            <a (click)="stateService.navigateTo('admin')" class="flex justify-between items-center p-4 cursor-pointer text-pink-600 font-bold">
-              <span>{{ 'profile.admin' | translate }}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+    <!-- Admin Panel Card -->
+    @if (stateService.isAdmin()) {
+      <div (click)="stateService.navigateTo('admin')" class="bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-lg shadow-lg p-6 mb-6 cursor-pointer hover:shadow-xl transition-shadow flex items-center justify-between">
+        <div class="flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-8 h-8 mr-4"><path stroke-linecap="round" stroke-linejoin="round" d="M10.343 3.94c.09-.542.56-1.007 1.11-1.227a48.903 48.903 0 011.662-.37c.732-.14 1.463.296 1.734 1.002.27.706.01 1.516-.628 1.833-1.011.505-1.93.98-2.774 1.457a.994.994 0 00-.333 1.11c.114.332.323.618.595.834.272.216.623.328 1.013.288a48.887 48.887 0 011.134-.117c.545-.026 1.056.24 1.34.736.283.495.234 1.096-.123 1.514-1.02 1.187-2.22 2.158-3.495 2.922a.994.994 0 00-.313 1.116c.115.332.323.618.595.834.272.216.623.328 1.013.288a48.89 48.89 0 011.455-.175c.545-.026 1.056.24 1.34.736.283.495.234 1.096-.123 1.514-1.18 1.37-2.58 2.45-4.045 3.192a.994.994 0 00-.313 1.116c.115.332.323.618.595.834.272.216.623.328 1.013.288a48.885 48.885 0 011.112-.102c.545-.026 1.056.24 1.34.736.283.495.234 1.096-.123 1.514-1.395 1.624-3.13 2.875-5.015 3.593a.994.994 0 00-.313 1.116c.115.332.323.618.595.834.272.216.623.328 1.013.288a48.885 48.885 0 011.454-.175c.545-.026 1.056.24 1.34.736.283.495.234 1.096-.123 1.514a23.993 23.993 0 01-5.132 3.393A.994.994 0 0012 21c-1.149 0-2.16-1.09-2.16-2.333 0-1.428.163-2.75.446-4.007A48.865 48.865 0 0112 12.5c2.41 0 4.634.349 6.626.963a.994.994 0 001.11-.333c.272-.216.481-.502.595-.834.114-.332.062-.693-.15-1.013a23.993 23.993 0 01-4.045-3.192c-.357-.418-.406-1.019-.123-1.514.283-.495.795-.762 1.34-.736.376.018.736.052 1.112.102.39.04.74-.072 1.013-.288.272-.216.481-.502.595-.834.114-.332.062-.693-.15-1.013-1.464-.742-2.864-1.822-4.045-3.192-.357-.418-.406-1.019-.123-1.514.283-.495.795-.762 1.34-.736.48.026.945.09 1.455.175.39.04.74-.072 1.013-.288.272-.216.481-.502.595-.834.114-.332.062-.693-.15-1.013-1.274-.763-2.474-1.734-3.495-2.922-.357-.418-.406-1.019-.123-1.514.283-.495.795-.762 1.34-.736.376.018.736.052 1.134.117.39.04.74-.072 1.013-.288.272-.216.481-.502.595-.834.114-.332.062-.693-.15-1.013-1.011-.505-1.93-.98-2.774-1.457-.638-.317-.898-1.127-.628-1.833.27-.706.992-1.148 1.734-1.002a48.903 48.903 0 011.662.37c.55.22.986.697 1.11 1.227z" /></svg>
+            <h2 class="text-xl font-bold">{{ 'profile.admin' | translate }}</h2>
+        </div>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6"><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
+      </div>
+    }
+
+    <!-- Dashboard Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- My Activity -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h2 class="p-4 font-bold text-lg border-b dark:border-gray-700 text-gray-800 dark:text-gray-100">My Activity</h2>
+        <div class="p-2">
+            <a (click)="stateService.navigateTo('orders')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.orders' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
             </a>
-          </div>
-        }
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <a (click)="stateService.navigateTo('orders')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.orders' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('orders')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.returns' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('coupons')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.coupons' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('wallet')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <div>
-              <span class="font-semibold">{{ 'profile.wallet' | translate }}</span>
-              <p class="text-xs text-green-600">{{ 'profile.balance' | translate }}: ₹{{ user.walletBalance }}</p>
-            </div>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('partner-program')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.partner' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('manage-addresses')" class="flex justify-between items-center p-4 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.addresses' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
+            <a (click)="stateService.navigateTo('orders')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.returns' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+            <a (click)="stateService.navigateTo('coupons')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-1.5h5.25m-5.25 0h3m-3 0h-3m-1.5-3l1.5 1.5m0 0l1.5-1.5m-1.5 1.5V12m6 6v-1.5m0-3V9m0-3V6m-6 12v-1.5m0-3V9m0-3V6" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.coupons' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+             <a (click)="stateService.navigateTo('wallet')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12a2.25 2.25 0 00-2.25-2.25H5.25A2.25 2.25 0 003 12m18 0v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6m18 0V9A2.25 2.25 0 0018.75 6.75h-1.5A2.25 2.25 0 0015 9v3m-6.75 0V9A2.25 2.25 0 006.75 6.75h-1.5A2.25 2.25 0 003 9v3" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.wallet' | translate }}</span>
+                <span class="text-sm font-bold text-green-600 ml-auto mr-2">₹{{ user.walletBalance }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
         </div>
       </div>
-      <!-- Column 2 -->
-      <div class="mt-6 lg:mt-0">
-        <div class="bg-white dark:bg-gray-800 rounded-lg shadow">
-          <a (click)="stateService.navigateTo('language-settings')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.language' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('privacy-policy')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.privacy' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('contact-us')" class="flex justify-between items-center p-4 border-b dark:border-gray-700 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.contact' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
-          <a (click)="stateService.navigateTo('faq')" class="flex justify-between items-center p-4 cursor-pointer">
-            <span class="font-semibold">{{ 'profile.faq' | translate }}</span>
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-          </a>
+
+      <!-- Account Settings -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h2 class="p-4 font-bold text-lg border-b dark:border-gray-700 text-gray-800 dark:text-gray-100">Account Settings</h2>
+        <div class="p-2">
+           <a (click)="stateService.navigateTo('manage-addresses')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.addresses' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+            <a (click)="stateService.navigateTo('language-settings')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.625M21 21l-5.25-11.625M3.75 5.25h16.5M4.5 12h15M5.25 18.75h13.5" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.language' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
         </div>
       </div>
+
+      <!-- More -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h2 class="p-4 font-bold text-lg border-b dark:border-gray-700 text-gray-800 dark:text-gray-100">More</h2>
+        <div class="p-2">
+            <a (click)="stateService.navigateTo('partner-program')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m-7.542 2.72c-3.142 0-5.999-2.218-5.999-5.354s2.857-5.354 5.999-5.354c3.142 0 5.999 2.218 5.999 5.354 0 .479-.045.942-.128 1.387m-5.871.399l-2.433 2.433a3 3 0 004.242 4.242l2.433-2.433m-4.242-4.242L12 12.75" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.partner' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+            <a (click)="stateService.navigateTo('privacy-policy')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.017h-.008v-.017z" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.privacy' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+        </div>
+      </div>
+
+       <!-- Help & Support -->
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md">
+        <h2 class="p-4 font-bold text-lg border-b dark:border-gray-700 text-gray-800 dark:text-gray-100">Help & Support</h2>
+        <div class="p-2">
+           <a (click)="stateService.navigateTo('contact-us')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.contact' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+            <a (click)="stateService.navigateTo('faq')" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.015H12v-.015z" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.faq' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+            <a (click)="openLiveChat()" class="flex items-center p-3 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 mr-3 text-pink-500"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.435l-4.286 1.428a.75.75 0 01-.986-.986l1.428-4.286A9.765 9.765 0 013 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>
+                <span class="font-semibold dark:text-gray-200">{{ 'profile.live_chat' | translate }}</span>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5 ml-auto text-gray-400"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+            </a>
+        </div>
+      </div>
+
     </div>
 
-    <div class="p-4 mt-6">
+    <!-- Logout -->
+    <div class="mt-8">
       <button (click)="logout()" class="w-full text-center py-3 font-bold text-pink-500 border-2 border-pink-200 bg-pink-50 rounded-lg dark:text-rose-400 dark:border-rose-700 dark:bg-rose-900/50 hover:bg-pink-100 dark:hover:bg-rose-900">
         {{ 'profile.logout' | translate }}
       </button>
     </div>
+
   </div>
 </div>
+} @else {
+  <div class="text-center py-20">
+      <h2 class="text-xl font-bold dark:text-white">Please Log In</h2>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Log in to see your profile and manage your account.</p>
+      <button (click)="stateService.navigateTo('login')" class="mt-6 px-6 py-2 bg-pink-500 text-white font-bold rounded-md">
+        LOG IN
+      </button>
+    </div>
 }

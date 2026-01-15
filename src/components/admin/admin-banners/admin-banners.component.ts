@@ -1,10 +1,7 @@
-
-
-import { Component, ChangeDetectionStrategy, inject, computed } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService, HeroSlide } from '../../../services/state.service';
 import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
-import { ProductService } from '../../../services/product.service';
 
 @Component({
   selector: 'app-admin-banners',
@@ -14,37 +11,43 @@ import { ProductService } from '../../../services/product.service';
 })
 export class AdminBannersComponent {
   stateService: StateService = inject(StateService);
-  productService: ProductService = inject(ProductService);
   fb: FormBuilder = inject(FormBuilder);
 
-  heroSlides = this.stateService.heroSlides;
-  allProducts = computed(() => this.productService.getAllProducts());
+  banners = this.stateService.heroSlides;
+  showForm = signal(false);
 
   bannerForm = this.fb.group({
     img: ['', Validators.required],
     title: ['', Validators.required],
-    subtitle: ['', Validators.required],
+    subtitle: [''],
     productId: [''],
   });
 
-  addBanner() {
-    if (this.bannerForm.valid) {
-      // FIX: Correct the type assertion as the form value does not include an 'id'.
-      this.stateService.addBanner(this.bannerForm.value as Omit<HeroSlide, 'id'>);
-      this.bannerForm.reset({ productId: '' });
-    } else {
-      this.stateService.showToast('Please fill all fields for the banner.');
+  saveBanner() {
+    if (this.bannerForm.invalid) {
+      this.stateService.showToast('Image and Title are required.');
+      return;
     }
+    
+    const newBannerData = {
+        img: this.bannerForm.value.img!,
+        title: this.bannerForm.value.title!,
+        subtitle: this.bannerForm.value.subtitle || '',
+        productId: this.bannerForm.value.productId || undefined
+    };
+
+    this.stateService.addBanner(newBannerData);
+    this.cancel();
   }
 
-  deleteBanner(index: number) {
+  deleteBanner(bannerId: string) {
     if (confirm('Are you sure you want to delete this banner?')) {
-      this.stateService.deleteBanner(index);
+      this.stateService.deleteBanner(bannerId);
     }
   }
 
-  getProductName(productId?: string): string {
-    if (!productId) return 'N/A';
-    return this.allProducts().find(p => p.id === productId)?.name || 'Unknown Product';
+  cancel() {
+    this.bannerForm.reset();
+    this.showForm.set(false);
   }
 }

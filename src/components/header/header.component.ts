@@ -1,4 +1,5 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, OnDestroy, ElementRef } from '@angular/core';
+
+import { Component, ChangeDetectionStrategy, inject, signal, computed, ElementRef } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
 import { ProductService } from '../../services/product.service';
@@ -12,11 +13,13 @@ type Suggestion = Product | { type: 'category', name: string };
   templateUrl: './header.component.html',
   imports: [CommonModule, FormsModule, NgOptimizedImage],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    '(document:click)': 'onDocumentClick($event)',
+  },
 })
-export class HeaderComponent implements OnInit, OnDestroy {
+export class HeaderComponent {
   stateService: StateService = inject(StateService);
   productService: ProductService = inject(ProductService);
-  // FIX: Explicitly type the injected ElementRef to resolve type inference issue.
   private elementRef: ElementRef<HTMLElement> = inject(ElementRef);
 
   cartItemCount = this.stateService.cartItemCount;
@@ -35,21 +38,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   cartTotal = this.stateService.cartTotal;
   miniCartItems = computed(() => this.cartItems().slice(0, 3));
   
-  private onDocumentClick = (event: MouseEvent): void => {
-    // FIX: Cast event.target to Node as the 'contains' method expects a Node, which resolves the type error.
-    if (this.showMiniCart() && this.elementRef.nativeElement && !this.elementRef.nativeElement.contains(event.target as Node)) {
-      if (!(event.target as HTMLElement).closest('.relative[data-minicart-container]')) {
-         this.showMiniCart.set(false);
-      }
+  onDocumentClick(event: MouseEvent): void {
+    // If a click happens outside of the header component, and the mini cart is open, close it.
+    // The mini cart itself has stopPropagation to prevent this from firing when clicked inside.
+    if (this.showMiniCart() && !this.elementRef.nativeElement.contains(event.target as Node)) {
+      this.showMiniCart.set(false);
     }
-  };
-
-  ngOnInit(): void {
-    document.addEventListener('click', this.onDocumentClick, true);
-  }
-
-  ngOnDestroy(): void {
-    document.removeEventListener('click', this.onDocumentClick, true);
   }
 
   toggleSidebar() {
@@ -59,7 +53,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
   toggleOrGoToCart(event: MouseEvent) {
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) { // lg breakpoint is 1024px
       if (this.cartItemCount() > 0) {
-        event.stopPropagation();
+        event.stopPropagation(); // Stop propagation so document click doesn't immediately close it
         this.showMiniCart.update(v => !v);
       } else {
         this.stateService.navigateTo('cart');

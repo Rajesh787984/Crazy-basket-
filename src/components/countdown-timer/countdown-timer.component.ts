@@ -1,3 +1,5 @@
+
+
 import { Component, ChangeDetectionStrategy, input, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -20,7 +22,6 @@ export class CountdownTimerComponent {
 
   constructor() {
     effect((onCleanup) => {
-      // FIX: An input signal must be called as a function to retrieve its value.
       const endDateValue = this.endDate();
       
       if (!endDateValue) {

@@ -1,9 +1,10 @@
-import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, ChangeDetectionStrategy, inject, signal, computed, OnInit, effect } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
 import { StateService, ActiveFilters } from '../../services/state.service';
 import { CountdownTimerComponent } from '../countdown-timer/countdown-timer.component';
+import { SeoService } from '../../services/seo.service';
 
 @Component({
   selector: 'app-product-list',
@@ -14,14 +15,10 @@ import { CountdownTimerComponent } from '../countdown-timer/countdown-timer.comp
 export class ProductListComponent implements OnInit {
   productService: ProductService = inject(ProductService);
   stateService: StateService = inject(StateService);
+  private seoService: SeoService = inject(SeoService);
 
   allProducts = signal<Product[]>([]);
   showFilters = signal(false);
-
-  // Quick View State
-  quickViewProduct = signal<Product | null>(null);
-  quickViewSelectedSize = signal<string | null>(null);
-  quickViewActiveImageIndex = signal(0);
 
   // Filter options derived from products
   priceRanges = [
@@ -107,12 +104,54 @@ export class ProductListComponent implements OnInit {
 
     return products;
   });
+  
+  constructor() {
+    effect(() => {
+      const title = this.pageTitle();
+      const description = `Shop our ${title} on Crazy Basket. Find great deals on fashion, electronics, and personalized gifts. Fast delivery across India.`;
+      this.seoService.updateTitle(title);
+      this.seoService.updateDescription(description);
+
+      const products = this.filteredAndSortedProducts();
+      if (products.length > 0) {
+        // Set first product image as the OG image for the page
+        this.seoService.updateImageUrl(products[0].images[0]);
+        
+        const itemListSchema = {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          'itemListElement': products.slice(0, 12).map((p, index) => ({ // Limit for performance
+            '@type': 'ListItem',
+            'position': index + 1,
+            'item': {
+              '@type': 'Product',
+              'name': p.name,
+              'image': p.images[0],
+              'url': `https://crazy-basket-app.com/#/productDetail;productId=${p.id}`,
+              'offers': {
+                '@type': 'Offer',
+                'priceCurrency': 'INR',
+                'price': p.displayPrice
+              }
+            }
+          }))
+        };
+        this.seoService.updateJsonLd(itemListSchema);
+      } else {
+        this.seoService.updateJsonLd(null);
+      }
+    });
+  }
 
   ngOnInit() {
     const category = this.stateService.selectedCategory();
     const products = category ? this.productService.getProducts(category) : this.productService.getAllProducts();
     this.allProducts.set(products);
-    this.localFilters.set(JSON.parse(JSON.stringify(this.stateService.activeFilters())));
+    const currentFilters = this.stateService.activeFilters();
+    this.localFilters.set({
+      priceRanges: [...currentFilters.priceRanges],
+      discounts: [...currentFilters.discounts],
+    });
   }
 
   viewProduct(productId: string) {
@@ -153,52 +192,5 @@ export class ProductListComponent implements OnInit {
   isSaleActive(product: Product): boolean {
     if (!product.flashSale) return false;
     return new Date(product.flashSale.endDate) > new Date();
-  }
-
-  // --- Quick View Methods ---
-
-  openQuickView(productId: string, event: MouseEvent) {
-    event.stopPropagation();
-    const product = this.productsWithDisplayPrice().find(p => p.id === productId);
-    if (product) {
-      this.quickViewProduct.set(product);
-      this.quickViewSelectedSize.set(null);
-      this.quickViewActiveImageIndex.set(0);
-    }
-  }
-
-  closeQuickView() {
-    this.quickViewProduct.set(null);
-  }
-
-  selectQuickViewSize(size: string) {
-    this.quickViewSelectedSize.set(size);
-  }
-
-  setQuickViewImage(index: number) {
-    this.quickViewActiveImageIndex.set(index);
-  }
-
-  addToBagFromQuickView() {
-    const product = this.quickViewProduct();
-    const size = this.quickViewSelectedSize();
-    const sizeInfo = product?.sizes.find(sz => sz.name === size);
-
-    if (product && size && sizeInfo?.inStock) {
-      this.stateService.addToCart(product, size);
-      this.closeQuickView();
-    } else if (!size) {
-      this.stateService.showToast('Please select a size!');
-    } else {
-      this.stateService.showToast('This size is out of stock!');
-    }
-  }
-
-  viewFullDetails() {
-    const product = this.quickViewProduct();
-    if (product) {
-      this.viewProduct(product.id);
-      this.closeQuickView();
-    }
   }
 }

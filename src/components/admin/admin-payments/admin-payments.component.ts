@@ -23,9 +23,6 @@ export class AdminPaymentsComponent implements OnInit {
   });
 
   contactForm = this.fb.group({
-    address: [''], // Not payment related but part of the object
-    email: [''],   // Not payment related
-    phone: [''],   // Not payment related
     upiId: [''],
     qrCodeImage: [''],
   });
@@ -33,9 +30,6 @@ export class AdminPaymentsComponent implements OnInit {
   ngOnInit() {
     const currentInfo = this.contactInfo();
     this.contactForm.patchValue({
-        address: currentInfo.address,
-        email: currentInfo.email,
-        phone: currentInfo.phone,
         upiId: currentInfo.upiId,
         qrCodeImage: currentInfo.qrCodeImage
     });

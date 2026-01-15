@@ -6,7 +6,6 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 const firebaseConfig = {
   apiKey: "AIzaSyA-IMOBdZK4NfcyfHShkM1h0UcfJ0pjom8",
   authDomain: "crazybasketmall.firebaseapp.com",
-  databaseURL: "https://crazybasketmall-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "crazybasketmall",
   storageBucket: "crazybasketmall.appspot.com",
   messagingSenderId: "442095144764",

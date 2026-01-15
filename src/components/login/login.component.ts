@@ -1,10 +1,12 @@
 import { Component, ChangeDetectionStrategy, inject, signal, AfterViewInit } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { AuthService } from '../../services/auth.service';
+import { from } from 'rxjs';
+import { sendEmailVerification } from 'firebase/auth';
 
-type EmailView = 'login' | 'signup';
+type EmailView = 'login' | 'signup' | 'reset';
 
 @Component({
   selector: 'app-login',
@@ -13,10 +15,10 @@ type EmailView = 'login' | 'signup';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginComponent implements AfterViewInit {
-  stateService: StateService = inject(StateService);
-  authService: AuthService = inject(AuthService);
-  fb: FormBuilder = inject(FormBuilder);
-
+  public stateService: StateService = inject(StateService);
+  private authService: AuthService = inject(AuthService);
+  private fb: FormBuilder = inject(FormBuilder);
+  
   loginMethod = signal<'email' | 'mobile'>('email');
   emailView = signal<EmailView>('login');
   mobileLoginStep = signal<'enter-mobile' | 'enter-otp'>('enter-mobile');
@@ -24,21 +26,35 @@ export class LoginComponent implements AfterViewInit {
   isLoading = signal(false);
   errorMessage = signal<string | null>(null);
   
-  emailForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-  });
+  showResendVerification = signal(false);
+  emailForVerification = signal('');
 
-  signupForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(6)]],
-    referralCode: [''],
-  });
+  emailForm: FormGroup;
+  signupForm: FormGroup;
+  resetForm: FormGroup;
+  mobileForm: FormGroup;
 
-  mobileForm = this.fb.group({
-    mobile: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
-    otp: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
-  });
+  constructor() {
+    this.emailForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+    });
+
+    this.signupForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+      password: ['', [Validators.required, Validators.minLength(6)]],
+      referralCode: [''],
+    });
+
+    this.resetForm = this.fb.group({
+      email: ['', [Validators.required, Validators.email]],
+    });
+
+    this.mobileForm = this.fb.group({
+      mobile: ['', [Validators.required, Validators.pattern('^[0-9]{10}$')]],
+      otp: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]]
+    });
+  }
 
   ngAfterViewInit() {
     // This container is used by Firebase for the invisible reCAPTCHA
@@ -75,10 +91,20 @@ export class LoginComponent implements AfterViewInit {
     if (this.emailForm.invalid) return;
     this.isLoading.set(true);
     this.errorMessage.set(null);
+    this.showResendVerification.set(false);
     const { email, password } = this.emailForm.value;
 
     this.authService.emailLogin(email!, password!).subscribe({
-        next: () => {
+        next: (userCredential) => {
+          if (userCredential.user.providerData.some(p => p.providerId === 'password') && !userCredential.user.emailVerified) {
+            this.isLoading.set(false);
+            this.errorMessage.set('Please verify your email address. Check your inbox for a verification link.');
+            this.showResendVerification.set(true);
+            this.emailForVerification.set(email!);
+            this.authService.logout();
+            return;
+          }
+
           this.isLoading.set(false);
           this.stateService.showToast(`Welcome back!`);
           const lastView = this.stateService.lastNavigatedView();
@@ -95,19 +121,39 @@ export class LoginComponent implements AfterViewInit {
     if (this.signupForm.invalid) return;
     this.isLoading.set(true);
     this.errorMessage.set(null);
+    this.showResendVerification.set(false);
     const { email, password } = this.signupForm.value;
 
     this.authService.emailSignUp(email!, password!).subscribe({
         next: () => {
             this.isLoading.set(false);
-            this.stateService.showToast(`Account created successfully! Please check your email to verify your account.`);
-            const lastView = this.stateService.lastNavigatedView();
-            this.stateService.navigateTo(lastView !== 'login' ? lastView : 'home');
+            this.stateService.showToast(`Account created! Please check your inbox to verify your email.`);
+            this.emailView.set('login');
+            this.emailForm.get('email')?.setValue(email);
         },
         error: (err) => {
             this.isLoading.set(false);
             this.errorMessage.set(this.formatFirebaseError(err));
         }
+    });
+  }
+
+  handlePasswordReset() {
+    if (this.resetForm.invalid) return;
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    const { email } = this.resetForm.value;
+
+    this.authService.sendPasswordReset(email!).subscribe({
+      next: () => {
+        this.isLoading.set(false);
+        this.stateService.showToast('Password reset link sent! Check your inbox.');
+        this.emailView.set('login');
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set(this.formatFirebaseError(err));
+      }
     });
   }
 
@@ -151,6 +197,47 @@ export class LoginComponent implements AfterViewInit {
       }
     });
   }
+  
+  resendVerification() {
+    if (!this.emailForVerification()) return;
+    
+    const password = this.emailForm.value.password;
+    if (!password) {
+      this.errorMessage.set('Please enter your password again to resend the verification email.');
+      return;
+    }
+    
+    this.isLoading.set(true);
+    this.errorMessage.set(null);
+    this.authService.emailLogin(this.emailForVerification(), password).subscribe({
+      next: (userCredential) => {
+        if (!userCredential.user.emailVerified) {
+           from(sendEmailVerification(userCredential.user)).subscribe({
+             next: () => {
+               this.stateService.showToast('Verification email sent!');
+               this.authService.logout();
+               this.isLoading.set(false);
+               this.showResendVerification.set(false);
+             },
+             error: (err) => {
+               this.errorMessage.set(this.formatFirebaseError(err));
+               this.authService.logout();
+               this.isLoading.set(false);
+             }
+           });
+        } else {
+            this.isLoading.set(false);
+            this.stateService.showToast('Email already verified! Please log in.');
+            this.showResendVerification.set(false);
+            this.authService.logout();
+        }
+      },
+      error: (err) => {
+        this.isLoading.set(false);
+        this.errorMessage.set('Incorrect password. Cannot resend verification.');
+      }
+    });
+  }
 
   private formatFirebaseError(error: any): string {
     if (error.code) {
@@ -158,8 +245,10 @@ export class LoginComponent implements AfterViewInit {
             case 'auth/invalid-email':
                 return 'Please enter a valid email address.';
             case 'auth/user-not-found':
+                return 'No account found with this email address.';
             case 'auth/wrong-password':
             case 'auth/invalid-credential':
+            case 'auth/invalid-login-credentials':
                 return 'Invalid email or password. Please check your credentials. For admin access, ensure the "admin@crazybasket.com" user exists in your Firebase project\'s Authentication console.';
             case 'auth/email-already-in-use':
                 return 'This email address is already in use.';

@@ -1,0 +1,51 @@
+
+<div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-4 space-y-3">
+  <h3 class="font-bold text-gray-700 dark:text-gray-300 border-b dark:border-gray-700 pb-3 text-md uppercase tracking-wider">Price Details</h3>
+  
+  <div class="space-y-2 text-sm">
+    <div class="flex justify-between text-gray-600 dark:text-gray-300">
+      <span>Total MRP</span>
+      <span>₹{{ cartMRP() | number:'1.0-0' }}</span>
+    </div>
+    <div class="flex justify-between text-gray-600 dark:text-gray-300">
+      <span>Discount on MRP</span>
+      <span class="text-green-600 dark:text-green-400">- ₹{{ cartDiscount() | number:'1.0-0' }}</span>
+    </div>
+    @if(appliedCoupon(); as coupon) {
+      <div class="flex justify-between text-gray-600 dark:text-gray-300">
+        <span class="flex items-center">
+            Coupon
+            <span class="font-mono text-xs bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded ml-2">{{ coupon.code }}</span>
+        </span>
+        <span class="text-green-600 dark:text-green-400 flex items-center">
+          - ₹{{ couponDiscount() | number:'1.0-0' }}
+          <button (click)="removeCoupon()" class="ml-2 text-red-500 hover:text-red-700 text-xs font-bold">[X]</button>
+        </span>
+      </div>
+    }
+    <div class="flex justify-between text-gray-600 dark:text-gray-300">
+      <span>Shipping Fee</span>
+      @if (shippingCost() === 0 && cartMRP() > 0) {
+        <span class="text-green-600 dark:text-green-400">FREE</span>
+      } @else if (shippingCost() > 0) {
+        <span>₹{{ shippingCost() | number:'1.0-0' }}</span>
+      } @else {
+         <span>₹0</span>
+      }
+    </div>
+  </div>
+  
+  @if(!appliedCoupon() && cartItemCount() > 0) {
+    <div class="pt-3 border-t dark:border-gray-700">
+      <div class="flex items-center border dark:border-gray-600 rounded-md overflow-hidden">
+        <input [(ngModel)]="couponCode" (keyup.enter)="applyCoupon()" type="text" placeholder="Have a Coupon?" class="flex-grow p-2 bg-transparent outline-none text-sm">
+        <button (click)="applyCoupon()" class="text-pink-500 font-bold px-4 self-stretch hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">APPLY</button>
+      </div>
+    </div>
+  }
+
+  <div class="flex justify-between items-center text-md font-bold text-gray-800 dark:text-white mt-3 pt-3 border-t dark:border-gray-700">
+    <span>Total Amount</span>
+    <span>₹{{ cartTotal() | number:'1.0-0' }}</span>
+  </div>
+</div>

@@ -5,8 +5,14 @@
   <title>Crazy Basket</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Crazy%20Basket%22%2C%22short_name%22%3A%22CrazyBasket%22%2C%22description%22%3A%22A%20modern%20e-commerce%20web%20application%20for%20Crazy%20Basket%2C%20showcasing%20a%20product%20catalog%2C%20product%20details%2C%20and%20a%20shopping%20cart.%22%2C%22start_url%22%3A%22%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23ffffff%22%2C%22theme_color%22%3A%22%23f43f5e%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22/assets/icons/icon-192x192.png%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image/png%22%7D%2C%7B%22src%22%3A%22/assets/icons/icon-512x512.png%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image/png%22%7D%5D%7D">
   <meta name="theme-color" content="#f43f5e">
+  <!-- iOS PWA Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Crazy Basket">
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192x192.png">
+
   <script defer src="https://cdn.tailwindcss.com"></script>
   <style>
     /* Custom scrollbar for better aesthetics */
@@ -65,7 +71,27 @@
 </script>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 antialiased font-sans text-gray-800 dark:text-gray-200">
+  <div id="splash-screen" class="fixed inset-0 bg-white dark:bg-gray-900 z-[100] flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out">
+    <svg class="h-12 w-auto mb-4 text-gray-800 dark:text-gray-100" viewBox="0 0 250 40" xmlns="http://www.w3.org/2000/svg">
+      <g transform="translate(0, 2)">
+        <path d="M5 10 H35 L30 35 H10 Z" fill="#EC4899" stroke="#EC4899" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 10 C12 2, 28 2, 28 10" stroke="#EC4899" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <path d="M22 18 L18 24 L22 24 L18 30" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+      </g>
+      <text x="45" y="32" font-family="Poppins, Verdana, sans-serif" font-size="26" font-weight="bold">
+        <tspan fill="#EC4899">Crazy</tspan><tspan fill="currentColor">Basket</tspan>
+      </text>
+    </svg>
+    <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-pink-500 mb-6"></div>
+    <div class="text-center">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Loading Great Deals!</h2>
+        <p class="mt-2 text-md text-gray-600 dark:text-gray-300">Get <span class="font-bold text-pink-500">20% OFF</span> your first order.</p>
+        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Use code: <span class="font-mono bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">CRAZY20</span></p>
+    </div>
+  </div>
+
   <app-root></app-root>
+  
   <!--Start of Tawk.to Script-->
   <script type="text/javascript">
     var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();

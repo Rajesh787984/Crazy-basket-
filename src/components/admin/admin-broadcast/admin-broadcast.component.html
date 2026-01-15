@@ -1,0 +1,49 @@
+<div>
+  <h1 class="text-3xl font-bold mb-6 text-gray-100">User Broadcast</h1>
+
+  <div class="bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-xl font-bold mb-2 text-gray-900">Send Offer to All Users</h2>
+    <p class="text-sm text-gray-600 mb-6">
+      This tool allows you to send a wallet credit to every non-admin user in the system. This action is irreversible.
+    </p>
+
+    <form [formGroup]="broadcastForm" (ngSubmit)="sendBroadcast()" class="space-y-6">
+      <div>
+        <label for="broadcast-type" class="block text-sm font-medium text-gray-700">Broadcast Type</label>
+        <div class="mt-1 w-full px-4 py-3 bg-gray-100 border-gray-300 border rounded-lg text-gray-500">
+          Add Wallet Balance
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div>
+          <label for="amount" class="block text-sm font-medium text-gray-700">Amount (₹)</label>
+          <input id="amount" formControlName="amount" type="number" placeholder="e.g., 100" class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400">
+        </div>
+        <div>
+          <label for="reason" class="block text-sm font-medium text-gray-700">Reason / Message</label>
+          <input id="reason" formControlName="reason" type="text" placeholder="e.g., Diwali Bonus" class="mt-1 w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-400">
+        </div>
+      </div>
+      
+      <div class="p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg">
+        <h3 class="font-bold text-red-800">Warning: This action cannot be undone.</h3>
+        <p class="text-sm text-red-700">
+          You are about to credit the wallet of all non-admin users. To proceed, please type "CONFIRM" in the box below.
+        </p>
+         <input formControlName="confirmation" type="text" placeholder='Type "CONFIRM"' class="mt-2 w-full px-4 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500">
+      </div>
+
+      <div class="text-right pt-4">
+        <button type="submit" [disabled]="broadcastForm.invalid || isSending()" class="bg-red-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center">
+          @if(isSending()) {
+            <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span>Sending...</span>
+          } @else {
+             <span>Send Broadcast to All Users</span>
+          }
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

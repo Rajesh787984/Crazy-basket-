@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -82,6 +83,14 @@ export class AdminUsersComponent {
     if(confirm('Are you sure you want to log in as this user? You will be redirected from the admin panel.')) {
       this.stateService.impersonateUser(userId);
     }
+  }
+
+  formatProvider(providerId?: string): string {
+    if (!providerId) return 'N/A';
+    if (providerId.includes('google.com')) return 'Google';
+    if (providerId.includes('phone')) return 'Mobile';
+    if (providerId.includes('password')) return 'Email';
+    return providerId;
   }
 
   // Modal controls

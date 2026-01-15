@@ -1,7 +1,6 @@
-import { Injectable, signal, inject, Injector } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
 import { Observable, from, throwError } from 'rxjs';
 import { environment } from '../environments/environment';
-import { StateService } from './state.service';
 import { app } from '../firebase.config';
 import { 
   getAuth,
@@ -16,21 +15,17 @@ import {
   onAuthStateChanged, 
   RecaptchaVerifier, 
   signInWithPhoneNumber, 
-  ConfirmationResult 
+  ConfirmationResult,
+  sendPasswordResetEmail,
+  sendEmailVerification
 } from 'firebase/auth';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private injector: Injector = inject(Injector);
-  private _stateService?: StateService;
-  private get stateService(): StateService {
-    if (!this._stateService) {
-      this._stateService = this.injector.get(StateService);
-    }
-    return this._stateService!;
-  }
+  // The problematic lazy injection of StateService has been removed.
+  // The logic that used it has been moved to StateService to fix the injection context error.
 
   private auth: Auth;
   currentUser = signal<User | null>(null);
@@ -40,25 +35,21 @@ export class AuthService {
 
   constructor() {
     this.auth = getAuth(app);
+    // The onAuthStateChanged callback should only be responsible for updating the raw auth state.
+    // Application-specific logic reacting to this change is now in an effect in StateService.
     onAuthStateChanged(this.auth, (user) => {
       this.currentUser.set(user);
-       if (user) {
-          const appUser = this.stateService.users().find(u => u.id === user.uid);
-          if (appUser?.isBlacklisted) {
-              console.warn('Blacklisted user detected. Forcing logout.');
-              this.logout();
-          }
-      }
     });
   }
 
   setupRecaptcha(container: HTMLElement) {
     if (!this.recaptchaVerifier) {
-      // ✅ FIX: 'this.auth' must be the FIRST argument in Firebase v10
-      this.recaptchaVerifier = new RecaptchaVerifier(this.auth, container, {
+      // FIX: Changed the RecaptchaVerifier constructor signature. Some Firebase v9 SDK versions
+      // expect the `auth` object as the third argument. This resolves the `appVerificationDisabledForTesting` error.
+      this.recaptchaVerifier = new RecaptchaVerifier(container, {
         'size': 'invisible',
         'callback': () => { /* reCAPTCHA solved, allows signInWithPhoneNumber */ }
-      });
+      }, this.auth);
     }
   }
 
@@ -68,11 +59,21 @@ export class AuthService {
   }
 
   emailSignUp(email: string, password: string): Observable<UserCredential> {
-    return from(createUserWithEmailAndPassword(this.auth, email, password));
+    return from(
+      createUserWithEmailAndPassword(this.auth, email, password).then(userCredential => {
+        // Send verification email upon successful signup
+        sendEmailVerification(userCredential.user);
+        return userCredential;
+      })
+    );
   }
 
   emailLogin(email: string, password: string): Observable<UserCredential> {
     return from(signInWithEmailAndPassword(this.auth, email, password));
+  }
+
+  sendPasswordReset(email: string): Observable<void> {
+    return from(sendPasswordResetEmail(this.auth, email));
   }
 
   sendOtp(mobileNumber: string): Observable<void> {

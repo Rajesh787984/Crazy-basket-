@@ -15,6 +15,7 @@ import {
   DocumentData,
   CollectionReference,
   DocumentReference,
+  onSnapshot,
 } from 'firebase/firestore';
 
 @Injectable({
@@ -65,35 +66,15 @@ export class FirestoreService {
     return await deleteDoc(docRef);
   }
 
-  async seedCollection<T extends { id: string }>(collectionName: string, data: T[]): Promise<void> {
+  listenToCollection<T>(collectionName: string, callback: (data: T[]) => void): () => void {
     const colRef = collection(this.db, collectionName);
-    const snapshot = await getDocs(colRef);
-    if (!snapshot.empty) {
-      console.log(`Collection "${collectionName}" already contains data. Seeding skipped.`);
-      return;
-    }
-
-    console.log(`Seeding collection "${collectionName}" with ${data.length} documents...`);
-    const batch = writeBatch(this.db);
-    data.forEach((item) => {
-      const { id, ...itemData } = item;
-      const docRef = doc(this.db, collectionName, id);
-      batch.set(docRef, itemData);
+    const unsubscribe = onSnapshot(colRef, (querySnapshot) => {
+      const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as T);
+      callback(data);
+    }, (error) => {
+        console.error(`[Firestore Listener Error] for collection '${collectionName}':`, error);
+        callback([]); // On error, provide empty data to avoid crashes.
     });
-
-    await batch.commit();
-    console.log(`Seeding for "${collectionName}" complete.`);
-  }
-
-  async seedDocument(collectionName: string, docId: string, data: object): Promise<void> {
-    const docRef = doc(this.db, collectionName, docId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        console.log(`Document "${collectionName}/${docId}" already exists. Seeding skipped.`);
-        return;
-    }
-    console.log(`Seeding document "${collectionName}/${docId}"...`);
-    await setDoc(docRef, data);
-    console.log(`Seeding for document "${collectionName}/${docId}" complete.`);
+    return unsubscribe;
   }
 }

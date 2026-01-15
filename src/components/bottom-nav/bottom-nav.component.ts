@@ -1,4 +1,5 @@
 
+
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../services/state.service';
@@ -6,7 +7,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-bottom-nav',
-  standalone: true,
   templateUrl: './bottom-nav.component.html',
   imports: [CommonModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,

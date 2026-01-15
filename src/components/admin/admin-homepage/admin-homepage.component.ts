@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal, WritableSignal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
@@ -37,11 +36,10 @@ export class AdminHomepageComponent {
 
   getSectionName(id: string): string {
     const names: { [key: string]: string } = {
-      categories: 'Shop by Category',
-      'small-banner': 'Small Banner',
       slider: 'Hero Slider',
       deals: 'Top Deals',
       trending: 'Trending Products',
+      recentlyViewed: 'Recently Viewed Products'
     };
     return names[id] || 'Unknown Section';
   }

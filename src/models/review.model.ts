@@ -1,5 +1,4 @@
 
-
 export interface Review {
   // FIX: Add 'id' property for unique identification in Firestore and state.
   id: string;

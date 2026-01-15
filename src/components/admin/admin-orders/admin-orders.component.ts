@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -58,13 +59,20 @@ export class AdminOrdersComponent {
   
   copyForShiprocket(order: Order) {
     const address = order.shippingAddress;
+    const paymentMethod = order.paymentMethod === 'COD' ? 'COD' : 'Prepaid';
     const shiprocketText = [
-      `Name: ${address.name}`,
+      `Order ID: ${order.id}`,
+      `Customer Name: ${address.name}`,
       `Address: ${address.address}, ${address.locality}`,
       `City: ${address.city}`,
       `State: ${address.state}`,
       `Pincode: ${address.pincode}`,
-      `Phone: ${address.mobile}`
+      `Phone: ${address.mobile}`,
+      `Product Name: ${order.items.map(i => i.product.name).join(', ')}`,
+      `SKU: ${order.items.map(i => i.product.id).join(', ')}`,
+      `Quantity: ${order.items.reduce((acc, i) => acc + i.quantity, 0)}`,
+      `Total Amount: ${order.totalAmount}`,
+      `Payment Method: ${paymentMethod}`
     ].join('\n');
     navigator.clipboard.writeText(shiprocketText).then(() => {
       this.stateService.showToast('Shiprocket details copied to clipboard!');
@@ -88,6 +96,7 @@ export class AdminOrdersComponent {
 
   private getInvoiceHtml(order: Order): string {
     const user = this.getUserForOrder(order);
+    const companyInfo = this.stateService.contactInfo();
     const itemsHtml = order.items.map(item => `
         <tr style="border-bottom: 1px solid #eee;">
             <td style="padding: 10px;">${item.product.name} (Size: ${item.size})</td>
@@ -134,6 +143,12 @@ export class AdminOrdersComponent {
                   <table>
                     <tr>
                       <td>
+                        <strong>From:</strong><br>
+                        Crazy Basket<br>
+                        ${companyInfo.address || '123 Fashion Ave, Style City, 560001'}<br>
+                        ${companyInfo.email || 'support@crazybasket.com'}
+                      </td>
+                       <td>
                         <strong>Bill To:</strong><br>
                         ${order.shippingAddress.name}<br>
                         ${order.shippingAddress.address}, ${order.shippingAddress.locality}<br>

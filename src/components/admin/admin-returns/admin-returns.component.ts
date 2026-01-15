@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../../services/state.service';
@@ -11,7 +12,6 @@ interface ReturnRequest {
 
 @Component({
   selector: 'app-admin-returns',
-  standalone: true,
   imports: [CommonModule, NgOptimizedImage],
   templateUrl: './admin-returns.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

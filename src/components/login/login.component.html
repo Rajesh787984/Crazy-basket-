@@ -36,6 +36,9 @@
           <form [formGroup]="emailForm" (ngSubmit)="handleEmailLogin()">
             <input formControlName="email" type="email" placeholder="Email" class="w-full mb-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 border rounded-lg text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-pink-400">
             <input formControlName="password" type="password" placeholder="Password" class="w-full mb-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 border rounded-lg text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-pink-400">
+            <div class="text-right mb-4">
+              <button type="button" (click)="emailView.set('reset')" class="text-sm font-semibold text-pink-600 dark:text-pink-400 hover:underline">Forgot Password?</button>
+            </div>
             <button type="submit" [disabled]="emailForm.invalid || isLoading()" class="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600 transition-colors disabled:bg-gray-400 flex justify-center items-center">
               @if(isLoading()) {
                 <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -44,9 +47,14 @@
               }
             </button>
           </form>
+          @if (showResendVerification()) {
+            <div class="text-center mt-4">
+              <button (click)="resendVerification()" class="font-semibold text-blue-600 dark:text-blue-400 hover:underline text-sm">Resend verification email</button>
+            </div>
+          }
           <p class="text-center mt-6 text-sm text-black dark:text-gray-300">New to Crazy Basket? <button (click)="emailView.set('signup')" class="font-semibold text-pink-600 dark:text-pink-400 hover:underline">Create an account</button></p>
         </div>
-      } @else {
+      } @else if (emailView() === 'signup') {
         <div>
            <h2 class="text-2xl font-bold text-black dark:text-white mb-1">Sign Up</h2>
            <p class="text-gray-600 dark:text-gray-300 mb-6">Create your new account</p>
@@ -64,6 +72,22 @@
             </button>
           </form>
           <p class="text-center mt-6 text-sm text-black dark:text-gray-300">Already have an account? <button (click)="emailView.set('login')" class="font-semibold text-pink-600 dark:text-pink-400 hover:underline">Login here</button></p>
+        </div>
+      } @else { <!-- emailView() === 'reset' -->
+        <div>
+          <h2 class="text-2xl font-bold text-black dark:text-white mb-1">Reset Password</h2>
+          <p class="text-gray-600 dark:text-gray-300 mb-6">Enter your email to get a reset link</p>
+          <form [formGroup]="resetForm" (ngSubmit)="handlePasswordReset()">
+            <input formControlName="email" type="email" placeholder="Email" class="w-full mb-4 px-4 py-3 bg-gray-100 dark:bg-gray-700 border-gray-200 dark:border-gray-600 border rounded-lg text-black dark:text-white focus:outline-none focus:ring-2 focus:ring-pink-400">
+            <button type="submit" [disabled]="resetForm.invalid || isLoading()" class="w-full bg-pink-500 text-white font-bold py-3 rounded-lg hover:bg-pink-600 transition-colors disabled:bg-gray-400 flex justify-center items-center">
+              @if(isLoading()) {
+                <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+              } @else {
+                <span>Send Reset Link</span>
+              }
+            </button>
+          </form>
+          <p class="text-center mt-6 text-sm text-black dark:text-gray-300">Remembered your password? <button (click)="emailView.set('login')" class="font-semibold text-pink-600 dark:text-pink-400 hover:underline">Login here</button></p>
         </div>
       }
     }

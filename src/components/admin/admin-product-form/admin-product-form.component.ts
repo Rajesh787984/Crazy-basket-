@@ -1,9 +1,11 @@
+
+
+
 import { Component, ChangeDetectionStrategy, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
 import { ProductService } from '../../../services/product.service';
 import { FormBuilder, Validators, FormArray, ReactiveFormsModule } from '@angular/forms';
-// FIX: Import ProductSize to be used for type casting.
 import { Product, ProductSize } from '../../../models/product.model';
 
 @Component({
@@ -15,11 +17,11 @@ import { Product, ProductSize } from '../../../models/product.model';
 export class AdminProductFormComponent implements OnInit {
   stateService: StateService = inject(StateService);
   productService: ProductService = inject(ProductService);
-  // FIX: Explicitly type injected FormBuilder to resolve type inference issue.
   fb: FormBuilder = inject(FormBuilder);
 
   productToEdit: Product | null = null;
   isEditMode = false;
+  categories = this.stateService.categories;
 
   productForm = this.fb.group({
     name: ['', Validators.required],
@@ -29,7 +31,6 @@ export class AdminProductFormComponent implements OnInit {
     b2bPrice: [null as number | null],
     rating: [0, [Validators.required, Validators.min(0), Validators.max(5)]],
     reviews: [0, [Validators.required, Validators.min(0)]],
-    // FIX: Removed `as const` to allow `patchValue` to assign a string to this form control.
     category: ['Men', Validators.required],
     images: this.fb.array([this.fb.control('', Validators.required)]),
     sizes: this.fb.array([], Validators.required),
@@ -41,6 +42,13 @@ export class AdminProductFormComponent implements OnInit {
     allowPhotoUpload: [false],
     sizeChartUrl: [''],
     preorderAvailable: [false],
+    // New controls
+    color: [''],
+    pattern: [''],
+    idealFor: ['Men'],
+    sleeve: [''],
+    closure: [''],
+    fabricCare: [''],
   });
 
   get images() { return this.productForm.get('images') as FormArray; }
@@ -93,7 +101,6 @@ export class AdminProductFormComponent implements OnInit {
       const updatedProduct: Product = {
         ...this.productToEdit,
         ...formValue,
-        // FIX: Cast `sizes` to the correct type `ProductSize[]` to resolve type mismatch.
         sizes: formValue.sizes as ProductSize[],
         b2bPrice: formValue.b2bPrice || undefined,
         discount
@@ -102,12 +109,36 @@ export class AdminProductFormComponent implements OnInit {
       this.stateService.showToast('Product updated successfully!');
     } else {
       const newProduct: Omit<Product, 'id'> = {
-        ...formValue,
-        // FIX: Cast `sizes` to the correct type `ProductSize[]` to resolve type mismatch.
-        sizes: formValue.sizes as ProductSize[],
-        b2bPrice: formValue.b2bPrice || undefined,
-        flashSale: undefined, // ensure flashsale is not on new product
+        name: formValue.name!,
+        brand: formValue.brand!,
+        price: formValue.price!,
+        originalPrice: formValue.originalPrice!,
         discount,
+        rating: formValue.rating!,
+        reviews: formValue.reviews!,
+        images: formValue.images as string[],
+        sizes: formValue.sizes as ProductSize[],
+        details: formValue.details as string[],
+        fit: formValue.fit || '',
+        fabric: formValue.fabric || '',
+        category: formValue.category!,
+        isCodAvailable: formValue.isCodAvailable!,
+        videoUrl: formValue.videoUrl || undefined,
+        b2bPrice: formValue.b2bPrice || undefined,
+        allowPhotoUpload: formValue.allowPhotoUpload!,
+        sizeChartUrl: formValue.sizeChartUrl || undefined,
+        preorderAvailable: formValue.preorderAvailable!,
+        // New fields
+        color: formValue.color || '',
+        pattern: formValue.pattern || '',
+        idealFor: formValue.idealFor || 'Unisex',
+        sleeve: formValue.sleeve || '',
+        closure: formValue.closure || '',
+        fabricCare: formValue.fabricCare || '',
+        // These don't exist on new products
+        flashSale: undefined, 
+        bundleOffer: undefined,
+        tags: undefined
       };
       this.productService.addProduct(newProduct);
       this.stateService.showToast('Product added successfully!');

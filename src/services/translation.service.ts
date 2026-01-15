@@ -1,4 +1,4 @@
-import { Injectable, inject, computed } from '@angular/core';
+import { Injectable, inject, computed, Signal } from '@angular/core';
 import { StateService } from './state.service';
 
 @Injectable({
@@ -29,6 +29,7 @@ export class TranslationService {
         privacy: 'Privacy Policy',
         contact: 'Contact Us',
         faq: 'FAQs',
+        live_chat: 'Live Chat',
         logout: 'LOG OUT',
       },
       returns: {
@@ -64,6 +65,7 @@ export class TranslationService {
         privacy: 'गोपनीयता नीति',
         contact: 'हमसे संपर्क करें',
         faq: 'अक्सर पूछे जाने वाले प्रश्न',
+        live_chat: 'लाइव चैट',
         logout: 'लॉग आउट करें',
       },
       returns: {
@@ -80,10 +82,14 @@ export class TranslationService {
     }
   };
 
-  private currentTranslations = computed(() => {
-    const lang = this.stateService.currentLanguage();
-    return this.translations[lang] || this.translations['en'];
-  });
+  private readonly currentTranslations: Signal<any>;
+
+  constructor() {
+    this.currentTranslations = computed(() => {
+      const lang = this.stateService.currentLanguage();
+      return this.translations[lang] || this.translations['en'];
+    });
+  }
 
   public translate(key: string): string {
     const keys = key.split('.');

@@ -1,9 +1,9 @@
+
 import { Component, ChangeDetectionStrategy, signal, computed, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-pull-to-refresh',
-  standalone: true,
   imports: [CommonModule],
   templateUrl: './pull-to-refresh.component.html',
   host: {
@@ -84,8 +84,7 @@ export class PullToRefreshComponent {
     this.pullPosition.set(resistedDiff);
   }
 
-  // 👇 यहाँ बदलाव किया गया है: (event?: any) जोड़ा गया
-  onTouchEnd(event?: any) {
+  onTouchEnd() {
     if (!this.isDragging() || this.isRefreshing()) return;
 
     this.isDragging.set(false);

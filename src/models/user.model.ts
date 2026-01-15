@@ -14,4 +14,5 @@ export interface User {
   referredBy?: string;
   photoUrl?: string;
   wishlist?: string[];
+  provider?: string;
 }

@@ -1,9 +1,9 @@
 <div>
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Manage Returns</h1>
+    <h1 class="text-3xl font-bold text-gray-100">Manage Returns</h1>
     <div>
-        <label for="status-filter" class="text-sm font-medium text-gray-700 mr-2">Filter by status:</label>
-        <select id="status-filter" [value]="selectedStatus()" (change)="setStatusFilter($event)" class="border rounded-md p-2 bg-white">
+        <label for="status-filter" class="text-sm font-medium text-gray-300 mr-2">Filter by status:</label>
+        <select id="status-filter" [value]="selectedStatus()" (change)="setStatusFilter($event)" class="border rounded-md p-2 bg-white text-gray-900">
             <option value="Pending">Pending</option>
             <option value="Approved">Approved</option>
             <option value="Rejected">Rejected</option>

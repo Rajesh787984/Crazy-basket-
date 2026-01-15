@@ -1,4 +1,4 @@
-<div class="flex flex-col h-full bg-gray-100 text-gray-800">
+<div class="flex flex-col h-full bg-gray-900 text-gray-200">
   <!-- Admin Header -->
   <header class="bg-gray-800 text-white shadow-md z-30 sticky top-0 lg:hidden">
     <div class="px-4 py-3 flex items-center justify-between">
@@ -75,10 +75,10 @@
         @case ('users') { <app-admin-users></app-admin-users> }
         @case ('referrals') { <app-admin-referrals></app-admin-referrals> }
         @case ('coupons') { <app-admin-coupons></app-admin-coupons> }
-        @case ('banners') { <app-admin-banners></app-admin-banners> }
-        @case ('small-banner') { <app-admin-small-banner></app-admin-small-banner> }
+        @case ('broadcast') { <app-admin-broadcast></app-admin-broadcast> }
         @case ('live-chat') { <app-admin-live-chat></app-admin-live-chat> }
         @case ('settings') { <app-admin-settings></app-admin-settings> }
+        @case ('banners') { <app-admin-banners></app-admin-banners> }
       }
     </main>
   </div>

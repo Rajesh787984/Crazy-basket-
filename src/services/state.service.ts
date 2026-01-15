@@ -1,5 +1,4 @@
-
-import { Injectable, signal, computed, inject, effect, WritableSignal } from '@angular/core';
+import { Injectable, signal, computed, inject, effect, WritableSignal, Signal } from '@angular/core';
 import { Product } from '../models/product.model';
 import { User } from '../models/user.model';
 import { Address } from '../models/address.model';
@@ -15,7 +14,7 @@ import { AuthService } from './auth.service';
 import { User as FirebaseUser } from 'firebase/auth';
 import { environment } from '../environments/environment';
 import { FirestoreService } from './firestore.service';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch, collection } from 'firebase/firestore';
 
 interface CartItem {
     product: Product;
@@ -32,17 +31,18 @@ export interface ActiveFilters {
   discounts: number[];
 }
 
+export interface ShippingSettings {
+  flatRate: number;
+  freeShippingThreshold: number;
+}
+
+// FIX: Added exported HeroSlide interface for use in other components.
 export interface HeroSlide {
   id: string;
   img: string;
   title: string;
   subtitle: string;
   productId?: string;
-}
-
-export interface ShippingSettings {
-  flatRate: number;
-  freeShippingThreshold: number;
 }
 
 @Injectable({
@@ -53,11 +53,135 @@ export class StateService {
   private authService: AuthService = inject(AuthService);
   private firestore: FirestoreService = inject(FirestoreService);
   
-  private initialized: Promise<void>;
-  private resolveInitialized!: () => void;
+  private unsubscribers: (() => void)[] = [];
+  private secondaryDataLoaded = false;
+  
+  // --- STATE SIGNALS (initialized empty, filled in init) ---
+  // FIX: Added heroSlides signal to manage hero banner data.
+  heroSlides = signal<HeroSlide[]>([]);
+  users = signal<User[]>([]);
+  currentUser = signal<User | null>(null);
+  originalAdmin = signal<User | null>(null);
+  orders = signal<Order[]>([]);
+  allAddresses = signal<Address[]>([]);
+  coupons = signal<Coupon[]>([]);
+  popups = signal<Popup[]>([]);
+  _categories = signal<Category[]>([]);
+  faqs = signal<Faq[]>([]);
+  userReviews = signal<Review[]>([]);
+  transactions = signal<Transaction[]>([]);
+  shippingSettings = signal<ShippingSettings>({ flatRate: 0, freeShippingThreshold: 0 });
+  contactInfo = signal<any>({});
+  homePageSections = signal<string[]>([]);
+  smallBanner = signal<{img: string, link: string} | null>(null);
+  
+  // Local/Session State
+  currentView = signal<string>('home');
+  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'wishlist', 'partner-program', 'coupons', 'return-request', 'manage-addresses']);
+  lastNavigatedView = signal<string>('home');
+  currentAdminView = signal<string>('dashboard');
+  productToEdit = signal<Product | null>(null);
+  isSidebarOpen = signal<boolean>(false);
+  toastMessage = signal<string | null>(null);
+  currentLanguage = signal<string>('en');
+  selectedProductId = signal<string | null>(null);
+  selectedCategory = signal<string | null>(null);
+  searchQuery = signal<string>('');
+  activeFilters = signal<ActiveFilters>({ priceRanges: [], discounts: [] });
+  sortOption = signal<string>('recommended');
+  recentlyViewed = signal<string[]>([]);
+  cartItems = signal<CartItem[]>([]);
+  appliedCoupon = signal<Coupon | null>(null);
+  selectedAddressId = signal<string | null>(null);
+  addressToEdit = signal<Address | null>(null);
+  selectedPaymentMethod = signal<string>('COD');
+  latestOrderId = signal<string | null>(null);
+  selectedOrderItemForReturn = signal<{ orderId: string, itemId: string } | null>(null);
+  productViewCounts = signal<Map<string, Map<string, number>>>(new Map());
+  comparisonList = signal<string[]>([]);
+  isInitialDataLoaded = signal(false);
+
+  // --- COMPUTED VALUES (declarations) ---
+  readonly categories: Signal<Category[]>;
+  readonly isAuthenticated: Signal<boolean>;
+  readonly isAdmin: Signal<boolean>;
+  readonly isImpersonating: Signal<boolean>;
+  readonly isB2B: Signal<boolean>;
+  readonly wishlist: Signal<Set<string>>;
+  readonly wishlistItemCount: Signal<number>;
+  readonly activePopup: Signal<Popup | undefined>;
+  readonly currentUserAddresses: Signal<Address[]>;
+  readonly cartItemsWithPrices: Signal<(CartItem & { displayPrice: number; })[]>;
+  readonly cartItemCount: Signal<number>;
+  readonly cartSubtotal: Signal<number>;
+  readonly cartMRP: Signal<number>;
+  readonly cartDiscountOnMRP: Signal<number>;
+  readonly couponDiscount: Signal<number>;
+  readonly shippingCost: Signal<number>;
+  readonly cartTotal: Signal<number>;
+  readonly isCodAvailableInCart: Signal<boolean>;
+  readonly totalSales: Signal<number>;
+  readonly pendingOrdersCount: Signal<number>;
+  readonly totalUsersCount: Signal<number>;
 
   constructor() {
-    this.initialized = new Promise(resolve => this.resolveInitialized = resolve);
+    // Initialize computed properties first to ensure injection context is available
+    this.categories = computed(() => {
+      const cats = this._categories();
+      const seen = new Set<string>();
+      return cats.filter(cat => {
+          const duplicate = seen.has(cat.name);
+          seen.add(cat.name);
+          return !duplicate;
+      });
+    });
+    this.isAuthenticated = computed(() => !!this.currentUser());
+    this.isAdmin = computed(() => this.authService.isAdmin() && !this.isImpersonating());
+    this.isImpersonating = computed(() => !!this.originalAdmin());
+    this.isB2B = computed(() => this.currentUser()?.userType === 'B2B');
+    this.wishlist = computed(() => new Set(this.currentUser()?.wishlist || []));
+    this.wishlistItemCount = computed(() => this.wishlist().size);
+    this.activePopup = computed(() => this.popups().find(p => p.isActive));
+    this.currentUserAddresses = computed(() => {
+      const user = this.currentUser();
+      if (!user) return [];
+      return this.allAddresses().filter(addr => addr.userId === user.id);
+    });
+    this.cartItemsWithPrices = computed(() => {
+      const isB2B = this.isB2B();
+      return this.cartItems().map(item => {
+        const displayPrice = (isB2B && item.product.b2bPrice) ? item.product.b2bPrice : item.product.price;
+        return { ...item, displayPrice };
+      });
+    });
+    this.cartItemCount = computed(() => this.cartItems().reduce((acc, item) => acc + item.quantity, 0));
+    this.cartSubtotal = computed(() => this.cartItemsWithPrices().reduce((acc, item) => acc + (item.displayPrice * item.quantity), 0));
+    this.cartMRP = computed(() => this.cartItems().reduce((acc, item) => acc + (item.product.originalPrice * item.quantity), 0));
+    this.cartDiscountOnMRP = computed(() => this.cartItemsWithPrices().reduce((acc, item) => acc + ((item.product.originalPrice - item.displayPrice) * item.quantity), 0));
+    this.couponDiscount = computed(() => {
+      const coupon = this.appliedCoupon();
+      const subtotal = this.cartSubtotal();
+      if (!coupon || subtotal === 0) return 0;
+      if (coupon.type === 'flat') return Math.min(coupon.value, subtotal);
+      else return Math.round((subtotal * coupon.value) / 100);
+    });
+    this.shippingCost = computed(() => {
+      const subtotal = this.cartSubtotal();
+      if (subtotal === 0) return 0;
+      const settings = this.shippingSettings();
+      return subtotal >= settings.freeShippingThreshold ? 0 : settings.flatRate;
+    });
+    this.cartTotal = computed(() => {
+      const subtotal = this.cartSubtotal();
+      if (subtotal === 0) return 0;
+      return Math.max(0, subtotal - this.couponDiscount() + this.shippingCost());
+    });
+    this.isCodAvailableInCart = computed(() => this.cartItems().every(item => item.product.isCodAvailable));
+    this.totalSales = computed(() => this.orders().reduce((acc, order) => acc + order.totalAmount, 0));
+    this.pendingOrdersCount = computed(() => this.orders().filter(o => o.status === 'Confirmed' || o.status === 'Shipped' || o.status === 'Pending Verification').length);
+    this.totalUsersCount = computed(() => this.users().length);
+
+    // Now run the rest of the constructor logic
     this.init();
     
     // Setup from localStorage (for non-persistent data)
@@ -74,178 +198,8 @@ export class StateService {
       }
     }
     
-    // Effects for syncing auth and user data
-    this.setupEffects();
-  }
-
-  public ensureInitialized(): Promise<void> {
-    return this.initialized;
-  }
-
-  private async init() {
-    // Wait for products to be ready before initializing orders that depend on them
-    await this.productService.ensureInitialized();
-    await this.loadAllData();
-    this.resolveInitialized();
-  }
-  
-  private async loadAllData() {
-    // Load collections with fallback
-    await this.loadCollection('users', this.users, this.getMockUsers);
-    await this.loadCollection('addresses', this.allAddresses, this.getMockAddresses);
-    await this.loadCollection('orders', this.orders, this.getMockOrders);
-    await this.loadCollection('coupons', this.coupons, this.getMockCoupons);
-    await this.loadCollection('popups', this.popups, this.getMockPopups);
-    await this.loadCollection('heroSlides', this.heroSlides, this.getMockHeroSlides);
-    await this.loadCollection('categories', this.categories, this.getMockCategories);
-    await this.loadCollection('faqs', this.faqs, this.getMockFaqs);
-    await this.loadCollection('reviews', this.userReviews, () => []);
-    await this.loadCollection('transactions', this.transactions, () => []);
-    
-    // Load single doc settings with fallback
-    await this.loadDoc('settings', 'shipping', this.shippingSettings, () => ({ flatRate: 40, freeShippingThreshold: 499 }));
-    await this.loadDoc('settings', 'smallBanner', this.smallBanner, this.getMockSmallBanner);
-    await this.loadDoc('settings', 'contactInfo', this.contactInfo, this.getMockContactInfo);
-    
-    try {
-      const docId = 'homePageSections';
-      const collection = 'settings';
-      const mockFn = () => ({ value: ['categories', 'small-banner', 'slider', 'deals', 'trending'] });
-      await this.firestore.seedDocument(collection, docId, mockFn());
-      const doc = await this.firestore.getDocument<{ value: string[] }>(collection, docId);
-      if (doc && doc.value) {
-        this.homePageSections.set(doc.value);
-        console.log(`Successfully loaded ${collection}/${docId} from Firestore.`);
-      } else {
-        throw new Error('Doc not found or value field missing after seeding');
-      }
-    } catch (e) {
-      console.warn(`Firestore failed to load '${'settings'}/${'homePageSections'}'. Falling back to mocks.`, e);
-      this.homePageSections.set(['categories', 'small-banner', 'slider', 'deals', 'trending']);
-    }
-  }
-  
-  private async loadCollection<T extends {id: string}>(name: string, signal: WritableSignal<T[]>, mockFn: () => T[]) {
-    try {
-      await this.firestore.seedCollection(name, mockFn());
-      const data = await this.firestore.getCollection<T>(name);
-      signal.set(data);
-      console.log(`Successfully loaded ${name} from Firestore.`);
-    } catch (e) {
-      console.warn(`Firestore failed to load '${name}'. Falling back to mocks.`, e);
-      signal.set(mockFn());
-    }
-  }
-
-  private async loadDoc<T extends object>(collection: string, docId: string, signal: WritableSignal<T>, mockFn: () => T) {
-    try {
-        await this.firestore.seedDocument(collection, docId, mockFn());
-        const doc = await this.firestore.getDocument<T>(collection, docId);
-        if (doc) {
-            signal.set(doc);
-            console.log(`Successfully loaded ${collection}/${docId} from Firestore.`);
-        } else {
-             throw new Error('Doc not found after seeding');
-        }
-    } catch (e) {
-        console.warn(`Firestore failed to load '${collection}/${docId}'. Falling back to mocks.`, e);
-        signal.set(mockFn());
-    }
-  }
-
-  // --- STATE SIGNALS (initialized empty, filled in init) ---
-  users = signal<User[]>([]);
-  currentUser = signal<User | null>(null);
-  originalAdmin = signal<User | null>(null);
-  orders = signal<Order[]>([]);
-  allAddresses = signal<Address[]>([]);
-  coupons = signal<Coupon[]>([]);
-  popups = signal<Popup[]>([]);
-  heroSlides = signal<HeroSlide[]>([]);
-  categories = signal<Category[]>([]);
-  faqs = signal<Faq[]>([]);
-  userReviews = signal<Review[]>([]);
-  transactions = signal<Transaction[]>([]);
-  shippingSettings = signal<ShippingSettings>({ flatRate: 0, freeShippingThreshold: 0 });
-  smallBanner = signal<HeroSlide>({} as HeroSlide);
-  contactInfo = signal<any>({});
-  homePageSections = signal<string[]>([]);
-  
-  // Local/Session State
-  currentView = signal<string>('home');
-  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'outfitRecommender', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'productComparison', 'wishlist', 'partner-program', 'coupons', 'return-request', 'manage-addresses']);
-  lastNavigatedView = signal<string>('home');
-  currentAdminView = signal<string>('dashboard');
-  productToEdit = signal<Product | null>(null);
-  isSidebarOpen = signal<boolean>(false);
-  toastMessage = signal<string | null>(null);
-  currentLanguage = signal<string>('en');
-  selectedProductId = signal<string | null>(null);
-  selectedCategory = signal<string | null>('Men');
-  searchQuery = signal<string>('');
-  activeFilters = signal<ActiveFilters>({ priceRanges: [], discounts: [] });
-  sortOption = signal<string>('recommended');
-  recentlyViewed = signal<string[]>([]);
-  comparisonList = signal<string[]>([]);
-  cartItems = signal<CartItem[]>([]);
-  appliedCoupon = signal<Coupon | null>(null);
-  selectedAddressId = signal<string | null>(null);
-  addressToEdit = signal<Address | null>(null);
-  selectedPaymentMethod = signal<string>('COD');
-  latestOrderId = signal<string | null>(null);
-  selectedOrderItemForReturn = signal<{ orderId: string, itemId: string } | null>(null);
-  productViewCounts = signal<Map<string, Map<string, number>>>(new Map());
-
-  // --- COMPUTED VALUES ---
-  isAuthenticated = computed(() => !!this.currentUser());
-  isAdmin = computed(() => this.authService.isAdmin() && !this.isImpersonating());
-  isImpersonating = computed(() => !!this.originalAdmin());
-  isB2B = computed(() => this.currentUser()?.userType === 'B2B');
-  wishlist = computed(() => new Set(this.currentUser()?.wishlist || []));
-  wishlistItemCount = computed(() => this.wishlist().size);
-  activePopup = computed(() => this.popups().find(p => p.isActive));
-  currentUserAddresses = computed(() => {
-    const user = this.currentUser();
-    if (!user) return [];
-    return this.allAddresses().filter(addr => addr.userId === user.id);
-  });
-  cartItemsWithPrices = computed(() => {
-    const isB2B = this.isB2B();
-    return this.cartItems().map(item => {
-      const displayPrice = (isB2B && item.product.b2bPrice) ? item.product.b2bPrice : item.product.price;
-      return { ...item, displayPrice };
-    });
-  });
-  cartItemCount = computed(() => this.cartItems().reduce((acc, item) => acc + item.quantity, 0));
-  cartSubtotal = computed(() => this.cartItemsWithPrices().reduce((acc, item) => acc + (item.displayPrice * item.quantity), 0));
-  cartMRP = computed(() => this.cartItems().reduce((acc, item) => acc + (item.product.originalPrice * item.quantity), 0));
-  cartDiscountOnMRP = computed(() => this.cartItemsWithPrices().reduce((acc, item) => acc + ((item.product.originalPrice - item.displayPrice) * item.quantity), 0));
-  couponDiscount = computed(() => {
-    const coupon = this.appliedCoupon();
-    const subtotal = this.cartSubtotal();
-    if (!coupon || subtotal === 0) return 0;
-    if (coupon.type === 'flat') return Math.min(coupon.value, subtotal);
-    else return Math.round((subtotal * coupon.value) / 100);
-  });
-  shippingCost = computed(() => {
-    const subtotal = this.cartSubtotal();
-    if (subtotal === 0) return 0;
-    const settings = this.shippingSettings();
-    return subtotal >= settings.freeShippingThreshold ? 0 : settings.flatRate;
-  });
-  cartTotal = computed(() => {
-    const subtotal = this.cartSubtotal();
-    if (subtotal === 0) return 0;
-    return Math.max(0, subtotal - this.couponDiscount() + this.shippingCost());
-  });
-  isCodAvailableInCart = computed(() => this.cartItems().every(item => item.product.isCodAvailable));
-  totalSales = computed(() => this.orders().reduce((acc, order) => acc + order.totalAmount, 0));
-  pendingOrdersCount = computed(() => this.orders().filter(o => o.status === 'Confirmed' || o.status === 'Shipped' || o.status === 'Pending Verification').length);
-  totalUsersCount = computed(() => this.users().length);
-  
-  // --- METHODS ---
-  private setupEffects() {
-     effect(() => {
+    // Effects are now created in the service's constructor, which is an injection context.
+    effect(() => {
       const authUser = this.authService.currentUser();
       if (authUser?.email) {
         let appUser: User | undefined;
@@ -254,11 +208,22 @@ export class StateService {
         } else {
           appUser = this.users().find(u => u.id === authUser.uid);
         }
-        if (!appUser) {
+        
+        if (appUser) {
+          // Backfill provider info if it's different or missing
+          const currentProvider = authUser.providerData[0]?.providerId;
+          if (currentProvider && appUser.provider !== currentProvider) {
+            const updatedUser: User = { ...appUser, provider: currentProvider };
+            this.users.update(users => users.map(u => u.id === updatedUser.id ? updatedUser : u));
+            this.firestore.setDocument('users', updatedUser.id, { provider: currentProvider }).catch(e => console.error("Failed to update user provider in DB", e));
+            appUser = updatedUser; // Ensure the rest of the effect uses the updated user
+          }
+        } else {
           appUser = this.createNewAppUserFromAuthUser(authUser);
           this.users.update(users => [...users, appUser!]);
           this.firestore.setDocument('users', appUser.id, appUser).catch(e => console.error("Failed to create user in DB", e));
         }
+
         this.currentUser.set(appUser);
       } else {
         this.currentUser.set(null);
@@ -281,8 +246,335 @@ export class StateService {
         localStorage.setItem('crazyBasketRecentlyViewed', JSON.stringify(this.recentlyViewed()));
       }
     });
+
+    effect(() => {
+      const user = this.currentUser();
+      if (user?.isBlacklisted && this.isAuthenticated()) {
+        console.warn('Blacklisted user session detected. Forcing logout.');
+        this.logout();
+      }
+    });
   }
 
+  private init(): void {
+    // This method now runs in the background, not blocking app startup.
+    // ProductService starts loading on its own.
+    this.loadInitialData();
+  }
+  
+  private async loadInitialData() {
+    // Load only the data critical for the first view (Homepage)
+    console.log('Loading critical initial data...');
+    
+    // These setup/seeding functions are async and can run in the background.
+    // They are not needed for the very first paint. The UI will reactively update
+    // as their data becomes available. This makes the initial load much faster.
+    this.setupInitialCategories();
+    this.setupInitialProducts();   // This is the slowest part, containing product loading.
+
+    const criticalDataPromises = [
+      this.loadCollection('categories', this._categories),
+      this.loadCollection('banners', this.heroSlides), // Load existing banners
+      this.loadDoc('settings', 'shipping', this.shippingSettings, () => ({ flatRate: 40, freeShippingThreshold: 499 })),
+      this.loadDoc('settings', 'contactInfo', this.contactInfo, this.getMockContactInfo),
+      this.loadDoc('settings', 'smallBanner', this.smallBanner, () => ({ img: 'https://picsum.photos/id/10/1200/200', link: 'home' })),
+      (async () => {
+        // Restore slider to homepage layout and persist it.
+        const newLayout = ['slider', 'deals', 'recentlyViewed', 'trending'];
+        this.homePageSections.set(newLayout);
+        try {
+          await this.firestore.setDocument('settings', 'homePageSections', { value: newLayout });
+          console.log("Forced homepage layout update in Firestore to:", newLayout);
+        } catch (e) {
+          console.error(`Failed to update 'settings/homePageSections'.`, e);
+        }
+      })()
+    ];
+    
+    await Promise.all(criticalDataPromises);
+    
+    // After attempting to load banners, run the seeder in the background.
+    // It will only execute if the banners collection was empty.
+    this.setupInitialBanners();
+    
+    console.log('Critical initial data loaded.');
+    this.isInitialDataLoaded.set(true);
+  }
+
+  private async loadSecondaryData() {
+    console.log('Loading secondary data in the background...');
+    const ordersLoadedPromise = new Promise<void>(resolve => {
+        let initialLoad = true;
+        const unsubscribe = this.firestore.listenToCollection<Order>('orders', (data) => {
+            const ordersWithDates = data.map(order => ({
+              ...order,
+              date: (order.date as any).toDate ? (order.date as any).toDate() : new Date(order.date)
+            }));
+            this.orders.set(ordersWithDates);
+
+            if (initialLoad) {
+                console.log(`Successfully loaded initial collection 'orders' from Firestore listener.`);
+                initialLoad = false;
+                resolve();
+            } else {
+                 console.log(`[Real-time update] Collection 'orders' updated.`);
+            }
+        });
+        this.unsubscribers.push(unsubscribe);
+    });
+
+    const dataLoadingPromises = [
+      this.loadCollection('users', this.users),
+      this.loadCollection('addresses', this.allAddresses),
+      ordersLoadedPromise,
+      this.loadCollection('coupons', this.coupons),
+      this.loadCollection('popups', this.popups),
+      this.loadCollection('faqs', this.faqs),
+      this.loadCollection('reviews', this.userReviews),
+      this.loadCollection('transactions', this.transactions),
+    ];
+    
+    await Promise.all(dataLoadingPromises);
+    console.log('Secondary data loaded.');
+  }
+  
+  private async loadCollection<T extends {id: string}>(name: string, signal: WritableSignal<T[]>) {
+    try {
+      const data = await this.firestore.getCollection<T>(name);
+      if (name === 'categories') {
+        const desiredOrder = ["Men", "Women", "Customize Gift", "Electronics"];
+        (data as unknown as Category[]).sort((a, b) => {
+          const indexA = desiredOrder.indexOf(a.name);
+          const indexB = desiredOrder.indexOf(b.name);
+
+          if (indexA === -1 && indexB === -1) return 0;
+          if (indexA === -1) return 1;
+          if (indexB === -1) return -1;
+          
+          return indexA - indexB;
+        });
+      }
+      signal.set(data);
+      console.log(`Successfully loaded collection '${name}' from Firestore.`);
+    } catch (e) {
+      console.error(`Failed to load collection '${name}' from Firestore. Setting to empty array.`, e);
+      signal.set([]);
+    }
+  }
+
+  private async loadDoc<T extends object>(collection: string, docId: string, signal: WritableSignal<T>, defaultValueFn: () => T) {
+    try {
+        const doc = await this.firestore.getDocument<T>(collection, docId);
+        if (doc) {
+            signal.set(doc);
+            console.log(`Successfully loaded document '${collection}/${docId}' from Firestore.`);
+        } else {
+             console.warn(`Document '${collection}/${docId}' not found in Firestore. Using default value.`);
+             signal.set(defaultValueFn());
+        }
+    } catch (e) {
+        console.error(`Failed to load document '${collection}/${docId}' from Firestore. Using default value.`, e);
+        signal.set(defaultValueFn());
+    }
+  }
+
+  private async setupInitialCategories() {
+    let categories = this.categories();
+    const batch = writeBatch(this.firestore.getDb());
+    let changesMade = false;
+
+    // --- Define categories to delete ---
+    const categoriesToDelete = ['Beauty', 'Kids'];
+    for (const catName of categoriesToDelete) {
+        const catsToDelete = categories.filter(c => c.name.toLowerCase() === catName.toLowerCase());
+        if (catsToDelete.length > 0) {
+            for (const cat of catsToDelete) {
+                const docRef = doc(this.firestore.getDb(), 'categories', cat.id);
+                batch.delete(docRef);
+                changesMade = true;
+                console.log(`Scheduled deletion for category: ${cat.name} (ID: ${cat.id})`);
+            }
+        }
+    }
+    
+    // --- Define categories to ensure exist ---
+    const categoriesToEnsure = [
+        { name: 'Men', img: 'https://picsum.photos/id/1005/200/200', bgColor: 'bg-blue-100' },
+        { name: 'Women', img: 'https://picsum.photos/id/1027/200/200', bgColor: 'bg-pink-100' },
+        { name: 'Customize Gift', img: 'https://picsum.photos/id/1074/200/200', bgColor: 'bg-purple-100' },
+        { name: 'Electronics', img: 'https://picsum.photos/id/2/200/200', bgColor: 'bg-gray-200' }
+    ];
+
+    for (const catToEnsure of categoriesToEnsure) {
+        const exists = categories.some(c => c.name === catToEnsure.name);
+        if (!exists) {
+            const newId = `cat_${Date.now()}_${catToEnsure.name.replace(' ', '_').toLowerCase()}`;
+            const newCategoryDoc = doc(this.firestore.getDb(), 'categories', newId);
+            batch.set(newCategoryDoc, { name: catToEnsure.name, img: catToEnsure.img, bgColor: catToEnsure.bgColor });
+            changesMade = true;
+            console.log(`Scheduled creation for category: ${catToEnsure.name}`);
+        }
+    }
+
+    if (changesMade) {
+      try {
+        await batch.commit();
+        console.log('Successfully configured categories in Firestore.');
+        await this.loadCollection('categories', this._categories); // Reload state
+        this.showToast('Default categories have been configured.');
+      } catch (error) {
+        console.error('Category setup failed:', error);
+      }
+    }
+  }
+
+  private async setupInitialProducts() {
+    await this.productService.productsLoaded;
+    const allProducts = this.productService.getAllProducts();
+    let changesMade = false;
+
+    const hasMen = allProducts.some(p => p.category === 'Men');
+    if (!hasMen) {
+        console.log('No "Men" products found. Creating sample products...');
+        const menProducts: Omit<Product, 'id'>[] = [
+            {
+                name: "Graphic Print T-Shirt", brand: "Urban Threads", price: 799, originalPrice: 1299, discount: 38, rating: 4.5, reviews: 320,
+                images: ['https://picsum.photos/seed/menstee1/400/500', 'https://picsum.photos/seed/menstee2/400/500'],
+                sizes: [{ name: 'S', inStock: true }, { name: 'M', inStock: true }, { name: 'L', inStock: true }, { name: 'XL', inStock: false }],
+                details: ['100% Cotton', 'Regular Fit', 'Graphic print on front'],
+                fit: 'Regular Fit', fabric: 'Cotton', category: 'Men', isCodAvailable: true, allowPhotoUpload: false, preorderAvailable: false,
+                color: 'Black', pattern: 'Graphic Print', idealFor: 'Men', sleeve: 'Short Sleeve', closure: 'Pullover', fabricCare: 'Machine wash', returnWindowDays: 7
+            },
+            {
+                name: "Slim Fit Denim Jeans", brand: "Denim Co.", price: 1899, originalPrice: 2999, discount: 37, rating: 4.7, reviews: 890,
+                images: ['https://picsum.photos/seed/mensjeans1/400/500', 'https://picsum.photos/seed/mensjeans2/400/500'],
+                sizes: [{ name: '30', inStock: true }, { name: '32', inStock: true }, { name: '34', inStock: true }, { name: '36', inStock: false }],
+                details: ['98% Cotton, 2% Elastane', 'Slim Fit', 'Mid-rise'],
+                fit: 'Slim Fit', fabric: 'Denim', category: 'Men', isCodAvailable: true, allowPhotoUpload: false, preorderAvailable: false,
+                color: 'Blue', pattern: 'Solid', idealFor: 'Men', sleeve: 'N/A', closure: 'Button and Zip', fabricCare: 'Machine wash', returnWindowDays: 7
+            }
+        ];
+        for (const p of menProducts) { await this.productService.addProduct(p); }
+        changesMade = true;
+    }
+
+    const hasWomen = allProducts.some(p => p.category === 'Women');
+    if (!hasWomen) {
+        console.log('No "Women" products found. Creating sample products...');
+        const womenProducts: Omit<Product, 'id'>[] = [
+            {
+                name: "Floral A-Line Dress", brand: "Femina", price: 1499, originalPrice: 2499, discount: 40, rating: 4.6, reviews: 540,
+                images: ['https://picsum.photos/seed/womendress1/400/500', 'https://picsum.photos/seed/womendress2/400/500'],
+                sizes: [{ name: 'S', inStock: true }, { name: 'M', inStock: true }, { name: 'L', inStock: false }],
+                details: ['Viscose Rayon', 'A-Line style', 'Floral print'],
+                fit: 'Regular Fit', fabric: 'Viscose Rayon', category: 'Women', isCodAvailable: true, allowPhotoUpload: false, preorderAvailable: false,
+                color: 'Red', pattern: 'Floral', idealFor: 'Women', sleeve: 'Sleeveless', closure: 'Zip', fabricCare: 'Hand wash', returnWindowDays: 7
+            },
+            {
+                name: "High-Waist Trousers", brand: "Chic Wear", price: 1299, originalPrice: 1999, discount: 35, rating: 4.4, reviews: 410,
+                images: ['https://picsum.photos/seed/womenpants1/400/500', 'https://picsum.photos/seed/womenpants2/400/500'],
+                sizes: [{ name: '28', inStock: true }, { name: '30', inStock: true }, { name: '32', inStock: true }],
+                details: ['Polyester Blend', 'High-waist fit', 'Comes with a belt'],
+                fit: 'Regular Fit', fabric: 'Polyester', category: 'Women', isCodAvailable: false, allowPhotoUpload: false, preorderAvailable: false,
+                color: 'Beige', pattern: 'Solid', idealFor: 'Women', sleeve: 'N/A', closure: 'Hook and Eye', fabricCare: 'Machine wash', returnWindowDays: 7
+            }
+        ];
+        for (const p of womenProducts) { await this.productService.addProduct(p); }
+        changesMade = true;
+    }
+
+    const hasCustomizeGift = allProducts.some(p => p.category === 'Customize Gift');
+    if (!hasCustomizeGift) {
+        console.log('No "Customize Gift" products found. Creating sample products...');
+        const giftProducts: Omit<Product, 'id'>[] = [
+            {
+                name: 'Personalized Photo Mug', brand: 'GiftCo', price: 499, originalPrice: 799, discount: 37, rating: 4.8, reviews: 150,
+                images: ['https://picsum.photos/seed/mug1/400/500', 'https://picsum.photos/seed/mug2/400/500'],
+                sizes: [{ name: '11oz', inStock: true }],
+                details: ['Ceramic photo mug', 'Upload your own photo', 'Dishwasher and microwave safe'],
+                fit: 'Standard', fabric: 'Ceramic', category: 'Customize Gift', isCodAvailable: true, allowPhotoUpload: true, preorderAvailable: false,
+                color: 'White', pattern: 'Custom', idealFor: 'Unisex', sleeve: 'N/A', closure: 'N/A', fabricCare: 'Hand wash recommended', returnWindowDays: 7
+            },
+            {
+                name: 'Custom Printed T-Shirt', brand: 'StyleMe', price: 699, originalPrice: 999, discount: 30, rating: 4.6, reviews: 210,
+                images: ['https://picsum.photos/seed/tshirt1/400/500', 'https://picsum.photos/seed/tshirt2/400/500'],
+                sizes: [{ name: 'S', inStock: true }, { name: 'M', inStock: true }, { name: 'L', inStock: true }, { name: 'XL', inStock: false }],
+                details: ['100% cotton t-shirt', 'High-quality print of your photo', 'Comfortable and durable'],
+                fit: 'Regular Fit', fabric: 'Cotton', category: 'Customize Gift', isCodAvailable: true, allowPhotoUpload: true, preorderAvailable: false,
+                color: 'Black', pattern: 'Custom', idealFor: 'Unisex', sleeve: 'Short Sleeve', closure: 'Pullover', fabricCare: 'Machine wash cold', returnWindowDays: 7
+            }
+        ];
+        for (const p of giftProducts) { await this.productService.addProduct(p); }
+        changesMade = true;
+    }
+
+    const hasElectronics = allProducts.some(p => p.category === 'Electronics');
+    if (!hasElectronics) {
+        console.log('No "Electronics" products found. Creating sample products...');
+        const electronicProducts: Omit<Product, 'id'>[] = [
+            {
+                name: 'Wireless Bluetooth Earbuds', brand: 'SoundWave', price: 1999, originalPrice: 3999, discount: 50, rating: 4.5, reviews: 1250,
+                images: ['https://picsum.photos/seed/buds1/400/500', 'https://picsum.photos/seed/buds2/400/500'],
+                sizes: [{ name: 'One Size', inStock: true }],
+                details: ['True Wireless Stereo earbuds', 'Up to 24 hours of playtime with charging case', 'IPX5 water-resistant'],
+                fit: 'In-Ear', fabric: 'Plastic', category: 'Electronics', isCodAvailable: true, allowPhotoUpload: false, preorderAvailable: false,
+                color: 'White', pattern: 'Solid', idealFor: 'Unisex', sleeve: 'N/A', closure: 'N/A', fabricCare: 'Wipe with dry cloth', returnWindowDays: 7
+            },
+            {
+                name: 'Smartwatch Fitness Tracker', brand: 'FitTrack', price: 2499, originalPrice: 4999, discount: 50, rating: 4.7, reviews: 980,
+                images: ['https://picsum.photos/seed/watch1/400/500', 'https://picsum.photos/seed/watch2/400/500'],
+                sizes: [{ name: 'One Size', inStock: true }],
+                details: ['1.8" AMOLED display', 'Heart rate and SpO2 monitoring', '100+ sports modes'],
+                fit: 'Wrist', fabric: 'Silicone/Metal', category: 'Electronics', isCodAvailable: false, allowPhotoUpload: false, preorderAvailable: false,
+                color: 'Black', pattern: 'Solid', idealFor: 'Unisex', sleeve: 'N/A', closure: 'Buckle', fabricCare: 'Wipe with dry cloth', returnWindowDays: 7
+            }
+        ];
+        for (const p of electronicProducts) { await this.productService.addProduct(p); }
+        changesMade = true;
+    }
+
+    if (changesMade) {
+        this.showToast('Added sample products for new categories.');
+    }
+  }
+  
+  private async setupInitialBanners() {
+    await this.productService.productsLoaded; // ensure products are available if we need them
+    const allProducts = this.productService.getAllProducts();
+    if (this.heroSlides().length === 0 && allProducts.length > 5) {
+      console.log('No hero banners found. Creating default banners...');
+      const shuffled = [...allProducts].sort(() => 0.5 - Math.random());
+
+      const defaultBannersData: Omit<HeroSlide, 'id'>[] = [
+        { img: 'https://picsum.photos/id/1018/1200/400', title: 'New Season Arrivals', subtitle: 'Check out the latest trends', productId: shuffled[0].id },
+        { img: 'https://picsum.photos/id/1025/1200/400', title: 'Flat 50% Off', subtitle: 'On select styles', productId: shuffled[1].id },
+        { img: 'https://picsum.photos/id/1040/1200/400', title: 'Customize Your Gifts', subtitle: 'Personalized presents for everyone', productId: shuffled[2].id },
+        { img: 'https://picsum.photos/id/20/1200/400', title: 'Electronics Hub', subtitle: 'Gadgets you will love', productId: shuffled[3].id },
+        { img: 'https://picsum.photos/id/30/1200/400', title: 'Work From Home Style', subtitle: 'Comfort meets fashion', productId: shuffled[4].id },
+        { img: 'https://picsum.photos/id/40/1200/400', title: 'Weekend Vibes', subtitle: 'Get ready for your getaway', productId: shuffled[5].id }
+      ];
+
+      const batch = writeBatch(this.firestore.getDb());
+      const newBannersForState: HeroSlide[] = [];
+
+      defaultBannersData.forEach((bannerData, index) => {
+        const newId = `banner_${Date.now()}_${index}`;
+        const docRef = doc(this.firestore.getDb(), 'banners', newId);
+        batch.set(docRef, bannerData);
+        newBannersForState.push({ ...bannerData, id: newId });
+      });
+      
+      try {
+        await batch.commit();
+        this.heroSlides.set(newBannersForState);
+        this.showToast('Default banners have been configured.');
+      } catch (error) {
+        console.error('Failed to create default banners:', error);
+      }
+    }
+  }
+
+  // --- METHODS ---
   setLanguage(code: string) {
     this.currentLanguage.set(code);
     if (typeof localStorage !== 'undefined') {
@@ -308,11 +600,17 @@ export class StateService {
         referralCode: name.toUpperCase().substring(0, 5) + Date.now().toString().slice(-4),
         photoUrl: authUser.photoURL || `https://picsum.photos/seed/${newId}/200/200`,
         wishlist: [],
+        provider: authUser.providerData[0]?.providerId || 'unknown',
     };
     return newUser;
   }
 
   navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product, orderItem?: { orderId: string, itemId: string } }) {
+    if (!this.secondaryDataLoaded) {
+      this.loadSecondaryData(); // Fire and forget
+      this.secondaryDataLoaded = true;
+    }
+    
     if (this.protectedViews.has(view) && !this.isAuthenticated()) {
       this.lastNavigatedView.set(view);
       this.currentView.set('login');
@@ -453,6 +751,27 @@ export class StateService {
     } catch(e) { console.error(e); }
   }
   
+  // Comparison List Methods
+  toggleComparison(productId: string) {
+    this.comparisonList.update(list => {
+      const index = list.indexOf(productId);
+      if (index > -1) {
+        return list.filter(id => id !== productId);
+      } else {
+        if (list.length < 4) {
+          return [...list, productId];
+        } else {
+          this.showToast('You can only compare up to 4 items at a time.');
+          return list;
+        }
+      }
+    });
+  }
+
+  clearComparison() {
+    this.comparisonList.set([]);
+  }
+
   // Cart, Wishlist, etc. (mostly local state)
   trackProductView(productId: string) { this.addRecentlyViewed(productId); }
   addRecentlyViewed(productId: string) { this.recentlyViewed.update(current => [productId, ...current.filter(id => id !== productId)].slice(0, 5)); }
@@ -467,8 +786,14 @@ export class StateService {
   }
   removeFromCart(productId: string, size: string) { this.cartItems.update(items => items.filter(item => !(item.product.id === productId && item.size === size))); }
   updateCartItemQuantity(productId: string, size: string, quantity: number) { if (quantity <= 0) { this.removeFromCart(productId, size); return; } this.cartItems.update(items => items.map(item => item.product.id === productId && item.size === size ? { ...item, quantity } : item )); }
+  
   applyCoupon(code: string) {
-    const coupon = this.coupons().find(c => c.code.toUpperCase() === code.toUpperCase() && new Date(c.expiryDate) >= new Date() && c.usedCount < c.maxUses);
+    const trimmedCode = code.trim();
+    if (!trimmedCode) { // Handle coupon removal or empty input
+      this.appliedCoupon.set(null);
+      return;
+    }
+    const coupon = this.coupons().find(c => c.code.toUpperCase() === trimmedCode.toUpperCase() && new Date(c.expiryDate) >= new Date() && c.usedCount < c.maxUses);
     if (coupon) {
       this.appliedCoupon.set(coupon);
       this.showToast(`Coupon "${coupon.code}" applied!`);
@@ -477,6 +802,7 @@ export class StateService {
       this.showToast('Invalid or expired coupon code.');
     }
   }
+
   async toggleWishlist(productId: string) {
     const user = this.currentUser();
     if (!user) { this.showToast('Please log in.'); return; }
@@ -496,8 +822,6 @@ export class StateService {
   setSortOption(option: string) { this.sortOption.set(option); }
   setFilters(filters: ActiveFilters) { this.activeFilters.set(filters); }
   resetFilters() { this.activeFilters.set({ priceRanges: [], discounts: [] }); }
-  toggleComparison(productId: string) { this.comparisonList.update(current => { const index = current.indexOf(productId); if (index > -1) { this.showToast('Removed from comparison.'); return current.filter(id => id !== productId); } else { if (current.length >= 4) { this.showToast('Max 4 items.'); return current; } this.showToast('Added to comparison.'); return [...current, productId]; } }); }
-  clearComparison() { this.comparisonList.set([]); }
   
   // Address Methods (Async)
   async addAddress(address: Omit<Address, 'id' | 'isDefault' | 'userId'>) {
@@ -512,13 +836,13 @@ export class StateService {
 
       try { await this.firestore.setDocument('addresses', newAddress.id, newAddress); } catch (e) { console.error(e); }
 
-      this.navigateTo(this.lastNavigatedView() === 'manage-addresses' ? 'manage-addresses' : 'address');
+      this.navigateTo(this.lastNavigatedView());
   }
   async updateAddress(updatedAddress: Address) {
       this.allAddresses.update(addresses => addresses.map(a => a.id === updatedAddress.id ? updatedAddress : a));
       this.showToast('Address updated successfully!');
       try { await this.firestore.setDocument('addresses', updatedAddress.id, updatedAddress); } catch (e) { console.error(e); }
-      this.navigateTo(this.lastNavigatedView() === 'manage-addresses' ? 'manage-addresses' : 'address');
+      this.navigateTo(this.lastNavigatedView());
   }
   async deleteAddress(addressId: string) {
       this.allAddresses.update(addresses => addresses.filter(a => a.id !== addressId));
@@ -564,10 +888,23 @@ export class StateService {
     this.showToast(`Order status updated to ${status}.`);
     try { await this.firestore.setDocument('orders', orderId, { status }); } catch(e) { console.error(e); }
   }
-  async requestReturn(orderId: string, itemId: string, reason: string, comment: string, photoUrl?: string) {
+  // FIX: Updated the method signature to accept all required fields for a return request
+  // and correctly construct the `returnRequest` object to match the OrderItem interface.
+  async requestReturn(orderId: string, itemId: string, reason: string, comment: string, returnType: 'Refund' | 'Exchange', refundMethod: 'Original Payment Method' | 'Wallet', photoUrl?: string) {
     this.orders.update(orders => orders.map(order => {
         if (order.id === orderId) {
-            const updatedItems = order.items.map(item => item.id === itemId ? { ...item, returnRequest: { reason, comment, photoUrl, status: 'Pending' as const } } : item);
+            const updatedItems = order.items.map(item => item.id === itemId ? { 
+              ...item, 
+              returnRequest: { 
+                requestDate: new Date().toISOString(),
+                returnType,
+                refundMethod,
+                reason, 
+                comment, 
+                photoUrl, 
+                status: 'Pending' as const 
+              } 
+            } : item);
             const updatedOrder = { ...order, items: updatedItems };
             this.firestore.setDocument('orders', orderId, updatedOrder).catch(console.error);
             return updatedOrder;
@@ -584,6 +921,10 @@ export class StateService {
               const updatedItems = order.items.map(item => {
                   if (item.id === itemId && item.returnRequest) {
                       itemToUpdate = item;
+                      if(status === 'Approved' && item.returnRequest.returnType === 'Refund' && item.returnRequest.refundMethod === 'Wallet' && order.userId) {
+                          this.updateUserWallet(order.userId, item.price * item.quantity, 'add');
+                          this.addTransaction({ userId: order.userId, date: new Date(), type: 'Credit', amount: item.price * item.quantity, description: `Refund for Order #${order.id}` });
+                      }
                       return { ...item, returnRequest: { ...item.returnRequest, status } };
                   }
                   return item;
@@ -594,7 +935,6 @@ export class StateService {
           }
           return order;
       }));
-      // ... refund logic ...
       this.showToast(`Return status updated to ${status}.`);
   }
   async placeOrder() {
@@ -605,20 +945,17 @@ export class StateService {
       return;
     }
     
-    // Create a deep plain copy of cart items to avoid circular references
-    const plainCartItems = JSON.parse(JSON.stringify(this.cartItemsWithPrices()));
-
     const newOrder: Order = {
       id: `ord_${Date.now()}`,
       userId: currentUser.id,
       date: new Date(),
-      items: plainCartItems.map((item: any, index: number) => ({
+      items: this.cartItemsWithPrices().map((item, index: number) => ({
         id: `item_${Date.now()}_${index}`,
-        product: item.product,
+        product: { ...item.product }, // Sanitize product object for Firestore
         size: item.size,
         quantity: item.quantity,
         price: item.displayPrice,
-        customization: item.customization,
+        ...(item.customization && { customization: item.customization }),
       })),
       totalAmount: this.cartTotal(),
       shippingAddress: selectedAddress,
@@ -663,20 +1000,18 @@ export class StateService {
       this.showToast('Cannot place order. User, address or cart is missing.');
       return;
     }
-
-    const plainCartItems = JSON.parse(JSON.stringify(this.cartItemsWithPrices()));
     
     const newOrder: Order = {
       id: `ord_${Date.now()}`,
       userId: currentUser.id,
       date: new Date(),
-      items: plainCartItems.map((item: any, index: number) => ({
+      items: this.cartItemsWithPrices().map((item, index: number) => ({
         id: `item_${Date.now()}_${index}`,
-        product: item.product,
+        product: { ...item.product }, // Sanitize product object for Firestore
         size: item.size,
         quantity: item.quantity,
         price: item.displayPrice,
-        customization: item.customization,
+        ...(item.customization && { customization: item.customization }),
       })),
       totalAmount: this.cartTotal(),
       shippingAddress: selectedAddress,
@@ -701,6 +1036,25 @@ export class StateService {
   }
   
   // Admin Methods (Async)
+  // FIX: Added method to add a new hero banner.
+  async addBanner(bannerData: Omit<HeroSlide, 'id'>) {
+    const newBanner: HeroSlide = { ...bannerData, id: `banner_${Date.now()}` };
+    this.heroSlides.update(banners => [newBanner, ...banners]);
+    this.showToast('Banner added.');
+    try {
+      // Don't store the ID as a field in the document itself
+      const { id, ...dataToStore } = newBanner;
+      await this.firestore.setDocument('banners', newBanner.id, dataToStore);
+    } catch(e) { console.error(e); }
+  }
+
+  // FIX: Added method to delete a hero banner.
+  async deleteBanner(bannerId: string) {
+    this.heroSlides.update(banners => banners.filter(b => b.id !== bannerId));
+    this.showToast('Banner deleted.');
+    try { await this.firestore.deleteDocument('banners', bannerId); } catch(e) { console.error(e); }
+  }
+
   async updateShippingSettings(settings: ShippingSettings) {
     this.shippingSettings.set(settings);
     this.showToast('Shipping settings updated.');
@@ -723,47 +1077,27 @@ export class StateService {
     try { await this.firestore.setDocument('settings', 'homePageSections', { value: sections }); } catch(e) { console.error(e); }
   }
   
-  async addBanner(bannerData: Omit<HeroSlide, 'id'>) {
-    const newBanner: HeroSlide = { ...bannerData, id: `banner_${Date.now()}` };
-    this.heroSlides.update(banners => [...banners, newBanner]);
-    this.showToast('Banner added successfully.');
-    try {
-        await this.firestore.setDocument('heroSlides', newBanner.id, newBanner);
-    } catch(e) { console.error(e); }
-  }
-
-  async deleteBanner(index: number) {
-      const bannerToDelete = this.heroSlides()[index];
-      if (!bannerToDelete) return;
-
-      this.heroSlides.update(banners => banners.filter((_, i) => i !== index));
-      this.showToast('Banner deleted.');
-      try {
-          await this.firestore.deleteDocument('heroSlides', bannerToDelete.id);
-      } catch(e) { console.error(e); }
-  }
-
-  async updateSmallBanner(banner: HeroSlide) {
-      this.smallBanner.set(banner);
-      this.showToast('Small banner updated.');
-      try { await this.firestore.setDocument('settings', 'smallBanner', banner); } catch(e) { console.error(e); }
+  async updateSmallBanner(banner: {img: string, link: string}) {
+    this.smallBanner.set(banner);
+    this.showToast('Small banner updated.');
+    try { await this.firestore.setDocument('settings', 'smallBanner', banner); } catch(e) { console.error(e); }
   }
 
   async addCategory(categoryData: Omit<Category, 'id'>) {
       const newCategory: Category = { ...categoryData, id: `cat_${Date.now()}` };
-      this.categories.update(cats => [newCategory, ...cats]);
+      this._categories.update(cats => [newCategory, ...cats]);
       this.showToast('Category added.');
       try { await this.firestore.setDocument('categories', newCategory.id, newCategory); } catch(e) { console.error(e); }
   }
 
   async updateCategory(updatedCategory: Category) {
-      this.categories.update(cats => cats.map(c => c.id === updatedCategory.id ? updatedCategory : c));
+      this._categories.update(cats => cats.map(c => c.id === updatedCategory.id ? updatedCategory : c));
       this.showToast('Category updated.');
       try { await this.firestore.setDocument('categories', updatedCategory.id, updatedCategory); } catch(e) { console.error(e); }
   }
 
   async deleteCategory(categoryId: string) {
-      this.categories.update(cats => cats.filter(c => c.id !== categoryId));
+      this._categories.update(cats => cats.filter(c => c.id !== categoryId));
       this.showToast('Category deleted.');
       try { await this.firestore.deleteDocument('categories', categoryId); } catch(e) { console.error(e); }
   }
@@ -812,38 +1146,56 @@ export class StateService {
       try { await this.firestore.deleteDocument('faqs', faqId); } catch(e) { console.error(e); }
   }
 
-  // --- MOCK DATA GETTERS (for fallback) ---
-  private getMockUsers = (): User[] => [
-    { id: '1', name: 'Admin User', email: 'admin@crazybasket.com', mobile: '8279458045', isVerified: true, walletBalance: 1000, isBlacklisted: false, userType: 'B2C', ipAddress: '127.0.0.1', deviceId: 'DEV_ADMIN', referralCode: 'ADMIN', photoUrl: 'https://picsum.photos/seed/admin/200/200', wishlist: [] },
-    { id: '2', name: 'John Doe', email: 'user@example.com', mobile: '9876543210', isVerified: true, walletBalance: 250, isBlacklisted: false, userType: 'B2C', ipAddress: '192.168.1.10', deviceId: 'DEV_JOHN', referralCode: 'JOHN', photoUrl: 'https://picsum.photos/seed/john/200/200', wishlist: ['5', '8'] },
-  ];
-  private getMockAddresses = (): Address[] => [
-      { id: 'addr1', userId: '2', name: 'John Doe', mobile: '9876543210', pincode: '560001', locality: 'MG Road', address: '123, Commerce House, Cunningham Road', city: 'Bengaluru', state: 'Karnataka', isDefault: true },
-      { id: 'addr2', userId: '3', name: 'Jane Smith', mobile: '1234567890', pincode: '110001', locality: 'Connaught Place', address: '45, Regal Building', city: 'New Delhi', state: 'Delhi', isDefault: false }
-  ];
-  private getMockCoupons = (): Coupon[] => [
-      { id: 'C1', code: 'SALE100', type: 'flat', value: 100, expiryDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(), maxUses: 50, usedCount: 12 },
-  ];
-  private getMockOrders = (): Order[] => {
-    // This is dependent on products, which are now loaded async.
-    // So we ensure products are loaded before calling this.
-    const allProducts = this.productService.getAllProducts();
-    if (allProducts.length === 0) return [];
-    // ... full mock order generation logic
-    return []; // Simplified for brevity
-  };
-  private getMockPopups = (): Popup[] => [
-    { id: 'pop1', title: 'Monsoon Madness Sale!', imageUrl: 'https://picsum.photos/id/1015/400/200', link: 'productList', isActive: true },
-    { id: 'pop2', title: 'New Arrivals for Kids', imageUrl: 'https://picsum.photos/id/103/400/200', link: 'productList', isActive: false }
-  ];
-  private getMockHeroSlides = (): HeroSlide[] => [
-     { id: 'slide1', img: 'https://picsum.photos/id/1015/1200/400', title: 'Biggest Fashion Sale', subtitle: 'UP TO 70% OFF', productId: '1' },
-  ];
-  private getMockSmallBanner = (): HeroSlide => ({ id: 'small_banner_1', img: 'https://picsum.photos/id/10/1200/200', title: 'Default Small Banner', subtitle: '', productId: '1' });
-  private getMockCategories = (): Category[] => [
-    { id: 'cat1', name: 'Men', img: 'https://picsum.photos/id/1025/200/200', bgColor: 'bg-blue-100' },
-    { id: 'cat2', name: 'Women', img: 'https://picsum.photos/id/1027/200/200', bgColor: 'bg-pink-100' },
-  ];
+  async broadcastWalletCredit(amount: number, reason: string): Promise<number> {
+    const usersToCredit = this.users().filter(u => !environment.adminEmails.includes(u.email));
+    if (usersToCredit.length === 0) {
+      this.showToast('No users to send broadcast to.');
+      return 0;
+    }
+
+    const batch = writeBatch(this.firestore.getDb());
+    const newTransactions: Transaction[] = [];
+
+    for (const user of usersToCredit) {
+      const newBalance = user.walletBalance + amount;
+      const userRef = doc(this.firestore.getDb(), 'users', user.id);
+      batch.update(userRef, { walletBalance: newBalance });
+
+      const newTx: Omit<Transaction, 'id'> = {
+        userId: user.id,
+        date: new Date(),
+        type: 'Credit',
+        amount: amount,
+        description: reason,
+      };
+      const txRef = doc(collection(this.firestore.getDb(), 'transactions'));
+      batch.set(txRef, newTx);
+      
+      newTransactions.push({ ...newTx, id: txRef.id });
+    }
+
+    try {
+      await batch.commit();
+
+      this.users.update(currentUsers => {
+        return currentUsers.map(u => {
+          const userToUpdate = usersToCredit.find(uc => uc.id === u.id);
+          if (userToUpdate) {
+            return { ...u, walletBalance: u.walletBalance + amount };
+          }
+          return u;
+        });
+      });
+      this.transactions.update(txs => [...newTransactions, ...txs]);
+
+      return usersToCredit.length;
+    } catch (e) {
+      console.error('Failed to commit wallet broadcast batch:', e);
+      throw e;
+    }
+  }
+
+  // --- MOCK DATA GETTERS (for default values) ---
   private getMockContactInfo = () => ({
     address: '123 Fashion Ave, Style City, 560001',
     email: 'support@crazybasket.com',
@@ -851,7 +1203,4 @@ export class StateService {
     upiId: 'yourname@oksbi',
     qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=yourname@oksbi%26pn=Crazy%20Basket'
   });
-  private getMockFaqs = (): Faq[] => [
-    { id: 'faq1', question: 'What is your return policy?', answer: 'You can return any item within 30 days of purchase.' },
-  ];
 }

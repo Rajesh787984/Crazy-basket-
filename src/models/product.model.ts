@@ -35,4 +35,13 @@ export interface Product {
     bundledProductId: string;
     offerText: string;
   };
+  // New fields from user request
+  color: string;
+  pattern: string;
+  idealFor: string; // e.g., 'Men', 'Women', 'Kids', 'Unisex'
+  sleeve: string;
+  closure: string;
+  fabricCare: string;
+  // FIX: Added optional returnWindowDays property to align with its usage in product seed data.
+  returnWindowDays?: number;
 }

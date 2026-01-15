@@ -1,4 +1,4 @@
-<script type="application/ld+json" [textContent]="jsonLdScript()"></script>
+
 
 @if (productWithDisplayPrice(); as p) {
   <div class="bg-white dark:bg-gray-900">
@@ -17,7 +17,7 @@
                 @if (i === 0) {
                   <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill priority class="w-full h-full object-contain">
                 } @else {
-                  <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill loading="lazy" class="w-full h-full object-contain">
+                  <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill class="w-full h-full object-contain">
                 }
               </div>
             }
@@ -70,7 +70,7 @@
                 @if (i === 0) {
                   <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill priority class="w-full h-full object-contain">
                 } @else {
-                  <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill loading="lazy" class="w-full h-full object-contain">
+                  <img [ngSrc]="image" [alt]="p.name + ' by ' + p.brand + ' - view ' + (i+1)" fill class="w-full h-full object-contain">
                 }
               </div>
             }
@@ -198,21 +198,67 @@
         <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 hidden lg:block">
           <h3 class="font-bold text-lg mb-2">Product Details</h3>
           <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">{{ p.details[0] }}</p>
+          
+          <div class="grid grid-cols-2 text-sm gap-y-3 gap-x-4 mb-4">
+              <div>
+                  <p class="font-semibold text-gray-500 dark:text-gray-400">SKU</p>
+                  <p class="text-gray-800 dark:text-gray-200">{{ p.id }}</p>
+              </div>
+              @if(p.color) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Color</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.color }}</p>
+                </div>
+              }
+              @if(p.idealFor) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Ideal For</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.idealFor }}</p>
+                </div>
+              }
+              @if(p.pattern) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Pattern</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.pattern }}</p>
+                </div>
+              }
+              @if(p.fabric) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Fabric</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.fabric }}</p>
+                </div>
+              }
+              @if(p.sleeve) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Sleeve</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.sleeve }}</p>
+                </div>
+              }
+              @if(p.closure) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Closure</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.closure }}</p>
+                </div>
+              }
+              @if(p.fabricCare) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Fabric Care</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.fabricCare }}</p>
+                </div>
+              }
+              @if(p.fit) {
+                <div>
+                    <p class="font-semibold text-gray-500 dark:text-gray-400">Fit</p>
+                    <p class="text-gray-800 dark:text-gray-200">{{ p.fit }}</p>
+                </div>
+              }
+          </div>
+
           <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-4">
             @for(detail of productDetailsBody(); track detail) {
               <li>{{ detail }}</li>
             }
           </ul>
-          <div class="grid grid-cols-2 text-sm gap-2">
-            <div>
-              <p class="font-semibold text-gray-800 dark:text-gray-200">Fit</p>
-              <p class="text-gray-600 dark:text-gray-400">{{ p.fit }}</p>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-800 dark:text-gray-200">Fabric</p>
-              <p class="text-gray-600 dark:text-gray-400">{{ p.fabric }}</p>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -228,21 +274,65 @@
             @if(openAccordion() === 'details') {
                 <div class="p-4 pt-0 text-gray-600 dark:text-gray-400">
                     <p class="text-sm mb-4">{{ p.details[0] }}</p>
+                    <div class="grid grid-cols-2 text-sm gap-y-3 gap-x-4 mb-4">
+                        <div>
+                            <p class="font-semibold text-gray-500 dark:text-gray-400">SKU</p>
+                            <p class="text-gray-800 dark:text-gray-200">{{ p.id }}</p>
+                        </div>
+                        @if(p.color) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Color</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.color }}</p>
+                          </div>
+                        }
+                        @if(p.idealFor) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Ideal For</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.idealFor }}</p>
+                          </div>
+                        }
+                        @if(p.pattern) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Pattern</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.pattern }}</p>
+                          </div>
+                        }
+                        @if(p.fabric) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Fabric</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.fabric }}</p>
+                          </div>
+                        }
+                        @if(p.sleeve) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Sleeve</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.sleeve }}</p>
+                          </div>
+                        }
+                        @if(p.closure) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Closure</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.closure }}</p>
+                          </div>
+                        }
+                        @if(p.fabricCare) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Fabric Care</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.fabricCare }}</p>
+                          </div>
+                        }
+                        @if(p.fit) {
+                          <div>
+                              <p class="font-semibold text-gray-500 dark:text-gray-400">Fit</p>
+                              <p class="text-gray-800 dark:text-gray-200">{{ p.fit }}</p>
+                          </div>
+                        }
+                    </div>
                     <ul class="list-disc list-inside text-sm space-y-1 mb-4">
                         @for(detail of productDetailsBody(); track detail) {
                         <li>{{ detail }}</li>
                         }
                     </ul>
-                    <div class="grid grid-cols-2 text-sm gap-2">
-                        <div>
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">Fit</p>
-                        <p>{{ p.fit }}</p>
-                        </div>
-                        <div>
-                        <p class="font-semibold text-gray-700 dark:text-gray-300">Fabric</p>
-                        <p>{{ p.fabric }}</p>
-                        </div>
-                    </div>
                 </div>
             }
         </div>

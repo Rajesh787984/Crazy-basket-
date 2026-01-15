@@ -1,10 +1,11 @@
+
+
 <aside 
-  class="fixed lg:static inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-xl z-40 transform transition-transform duration-300 ease-in-out lg:shadow-none lg:border-r lg:dark:border-gray-700 lg:flex-shrink-0"
+  class="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 shadow-xl z-40 transform transition-transform duration-300 ease-in-out"
   [class.translate-x-0]="isOpen()"
-  [class.-translate-x-full]="!isOpen()"
-  [class.lg:translate-x-0]="true">
+  [class.-translate-x-full]="!isOpen()">
   
-  <div class="h-full overflow-y-auto pt-24 lg:pt-4">
+  <div class="h-full overflow-y-auto pt-20">
     <div class="p-4 border-b border-gray-200 dark:border-gray-700">
       @if(currentUser(); as user) {
         <div class="flex items-center space-x-3">
@@ -37,7 +38,7 @@
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
         </svg>
       </a>
-      @for(category of categories(); track category.name) {
+      @for(category of categories(); track category.id) {
         <a (click)="selectCategory(category.name)" class="flex items-center justify-between px-4 py-3 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer">
           <span class="font-semibold">{{ category.name }}</span>
           <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -49,7 +50,6 @@
 
     <div class="border-t border-gray-200 dark:border-gray-700 mt-4 pt-4 px-4 text-sm text-gray-600 dark:text-gray-400">
       <a (click)="stateService.navigateTo('partner-program')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">Partner Program</a>
-      <a (click)="stateService.navigateTo('outfitRecommender')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">AI Style Helper</a>
       <a (click)="stateService.navigateTo('contact-us')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">Contact Us</a>
       <a (click)="stateService.navigateTo('faq')" class="block py-2 hover:text-pink-500 dark:hover:text-pink-400 cursor-pointer">FAQs</a>
     </div>

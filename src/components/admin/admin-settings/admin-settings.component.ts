@@ -1,3 +1,4 @@
+
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { StateService } from '../../../services/state.service';
@@ -35,7 +36,7 @@ export class AdminSettingsComponent implements OnInit {
   });
 
   ngOnInit() {
-    this.contactForm.setValue(this.contactInfo());
+    this.contactForm.patchValue(this.contactInfo());
   }
 
   saveContactInfo() {
