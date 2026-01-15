@@ -16,6 +16,7 @@ import { environment } from '../environments/environment';
 import { FirestoreService } from './firestore.service';
 import { doc, writeBatch, collection } from 'firebase/firestore';
 
+// ✅ Interface Fixed
 export interface ReturnRequest {
   reason: string;
   comment: string;
@@ -766,4 +767,417 @@ export class StateService {
     }
     this.showToast(`${product.name} added to bag!`);
   }
-  removeFromCart
+  removeFromCart(productId: string, size: string) { this.cartItems.update(items => items.filter(item => !(item.product.id === productId && item.size === size))); }
+  updateCartItemQuantity(productId: string, size: string, quantity: number) { if (quantity <= 0) { this.removeFromCart(productId, size); return; } this.cartItems.update(items => items.map(item => item.product.id === productId && item.size === size ? { ...item, quantity } : item )); }
+  
+  applyCoupon(code: string) {
+    const trimmedCode = code.trim();
+    if (!trimmedCode) { 
+      this.appliedCoupon.set(null);
+      return;
+    }
+    const coupon = this.coupons().find(c => c.code.toUpperCase() === trimmedCode.toUpperCase() && new Date(c.expiryDate) >= new Date() && c.usedCount < c.maxUses);
+    if (coupon) {
+      this.appliedCoupon.set(coupon);
+      this.showToast(`Coupon "${coupon.code}" applied!`);
+    } else {
+      this.appliedCoupon.set(null);
+      this.showToast('Invalid or expired coupon code.');
+    }
+  }
+
+  async toggleWishlist(productId: string) {
+    const user = this.currentUser();
+    if (!user) { this.showToast('Please log in.'); return; }
+    
+    const currentWishlist = user.wishlist || [];
+    const newWishlist = currentWishlist.includes(productId) ? currentWishlist.filter(id => id !== productId) : [...currentWishlist, productId];
+    
+    this.currentUser.update(u => u ? { ...u, wishlist: newWishlist } : null);
+    this.users.update(users => users.map(u => u.id === user.id ? { ...u, wishlist: newWishlist } : u));
+    
+    this.showToast(currentWishlist.includes(productId) ? 'Removed from wishlist.' : 'Added to wishlist.');
+    
+    try {
+      await this.firestore.setDocument('users', user.id, { wishlist: newWishlist });
+    } catch (e) { console.error('Failed to update wishlist in Firestore:', e); }
+  }
+  setSortOption(option: string) { this.sortOption.set(option); }
+  setFilters(filters: ActiveFilters) { this.activeFilters.set(filters); }
+  resetFilters() { this.activeFilters.set({ priceRanges: [], discounts: [] }); }
+  
+  async addAddress(address: Omit<Address, 'id' | 'isDefault' | 'userId'>) {
+      const user = this.currentUser();
+      if (!user) { this.showToast('You must be logged in.'); return; }
+      
+      const isFirstAddress = this.currentUserAddresses().length === 0;
+      const newAddress: Address = { ...address, userId: user.id, id: `addr_${Date.now()}`, isDefault: isFirstAddress };
+      
+      this.allAddresses.update(addresses => [...addresses, newAddress]);
+      this.showToast('Address added successfully!');
+
+      try { await this.firestore.setDocument('addresses', newAddress.id, newAddress); } catch (e) { console.error(e); }
+
+      this.navigateTo(this.lastNavigatedView());
+  }
+  async updateAddress(updatedAddress: Address) {
+      this.allAddresses.update(addresses => addresses.map(a => a.id === updatedAddress.id ? updatedAddress : a));
+      this.showToast('Address updated successfully!');
+      try { await this.firestore.setDocument('addresses', updatedAddress.id, updatedAddress); } catch (e) { console.error(e); }
+      this.navigateTo(this.lastNavigatedView());
+  }
+  async deleteAddress(addressId: string) {
+      this.allAddresses.update(addresses => addresses.filter(a => a.id !== addressId));
+      if (this.selectedAddressId() === addressId) { this.selectedAddressId.set(null); }
+      this.showToast('Address deleted.');
+      try { await this.firestore.deleteDocument('addresses', addressId); } catch (e) { console.error(e); }
+  }
+  async setDefaultAddress(addressId: string) {
+    const userId = this.currentUser()?.id;
+    if (!userId) return;
+    
+    const batch = writeBatch(this.firestore.getDb());
+    this.allAddresses.update(addresses => 
+      addresses.map(a => {
+        if (a.userId === userId) {
+          const isDefault = a.id === addressId;
+          const docRef = doc(this.firestore.getDb(), 'addresses', a.id);
+          batch.update(docRef, { isDefault });
+          return { ...a, isDefault };
+        }
+        return a;
+      })
+    );
+    try { await batch.commit(); this.showToast('Default address updated.'); } catch (e) { console.error(e); }
+  }
+
+  async addReview(review: { productId: string, rating: number, comment: string }) {
+    const author = this.currentUser()?.name || 'Anonymous';
+    const newReview: Review = { ...review, author, date: new Date(), id: `rev_${Date.now()}` };
+    this.userReviews.update(reviews => [...reviews, newReview]);
+    this.showToast('Thank you for your review!');
+    try { await this.firestore.setDocument('reviews', newReview.id, newReview); } catch(e) { console.error(e); }
+  }
+  async deleteReview(reviewToDelete: Review) {
+    this.userReviews.update(reviews => reviews.filter(r => r.id !== reviewToDelete.id));
+    this.showToast('Review deleted.');
+    try { await this.firestore.deleteDocument('reviews', reviewToDelete.id); } catch(e) { console.error(e); }
+  }
+  async updateOrderStatus(orderId: string, status: OrderStatus) {
+    this.orders.update(orders => orders.map(order => order.id === orderId ? { ...order, status } : order));
+    this.showToast(`Order status updated to ${status}.`);
+    try { await this.firestore.setDocument('orders', orderId, { status }); } catch(e) { console.error(e); }
+  }
+  
+  async requestReturn(orderId: string, itemId: string, reason: string, comment: string, returnType: 'Refund' | 'Exchange', refundMethod: 'Original Payment Method' | 'Wallet', photoUrl?: string) {
+    this.orders.update(orders => orders.map(order => {
+        if (order.id === orderId) {
+            const updatedItems = order.items.map(item => item.id === itemId ? { 
+              ...item, 
+              returnRequest: { 
+                requestDate: new Date().toISOString(),
+                returnType,
+                refundMethod,
+                reason, 
+                comment, 
+                photoUrl, 
+                status: 'Pending' as const 
+              } as any 
+            } : item);
+            const updatedOrder = { ...order, items: updatedItems };
+            this.firestore.setDocument('orders', orderId, updatedOrder).catch(console.error);
+            return updatedOrder;
+        }
+        return order;
+    }));
+    this.showToast('Return requested successfully.');
+    this.navigateTo('orders');
+  }
+
+  async updateReturnStatus(orderId: string, itemId: string, status: ReturnStatus) {
+      let orderToUpdate: Order | undefined, itemToUpdate: OrderItem | undefined;
+      this.orders.update(orders => orders.map(order => {
+          if (order.id === orderId) {
+              const updatedItems = order.items.map(item => {
+                  if (item.id === itemId && item.returnRequest) {
+                      itemToUpdate = item;
+                      const req = item.returnRequest as any;
+                      if(status === 'Approved' && req.returnType === 'Refund' && req.refundMethod === 'Wallet' && order.userId) {
+                          this.updateUserWallet(order.userId, item.price * item.quantity, 'add');
+                          this.addTransaction({ userId: order.userId, date: new Date(), type: 'Credit', amount: item.price * item.quantity, description: `Refund for Order #${order.id}` });
+                      }
+                      return { ...item, returnRequest: { ...item.returnRequest, status } };
+                  }
+                  return item;
+              });
+              orderToUpdate = { ...order, items: updatedItems };
+              this.firestore.setDocument('orders', orderId, orderToUpdate).catch(console.error);
+              return orderToUpdate;
+          }
+          return order;
+      }));
+      this.showToast(`Return status updated to ${status}.`);
+  }
+
+  async placeOrder() {
+    const currentUser = this.currentUser();
+    const selectedAddress = this.allAddresses().find(a => a.id === this.selectedAddressId());
+    if (!currentUser || !selectedAddress || this.cartItems().length === 0) {
+      this.showToast('Cannot place order. User, address or cart is missing.');
+      return;
+    }
+    
+    const newOrder: Order = {
+      id: `ord_${Date.now()}`,
+      userId: currentUser.id,
+      date: new Date(),
+      items: this.cartItemsWithPrices().map((item, index: number) => ({
+        id: `item_${Date.now()}_${index}`,
+        product: { ...item.product }, 
+        size: item.size,
+        quantity: item.quantity,
+        price: item.displayPrice,
+        ...(item.customization && { customization: item.customization }),
+      })),
+      totalAmount: this.cartTotal(),
+      shippingAddress: selectedAddress,
+      paymentMethod: this.selectedPaymentMethod(),
+      status: 'Confirmed'
+    };
+
+    if (this.selectedPaymentMethod() === 'Wallet') {
+        if (currentUser.walletBalance < this.cartTotal()) {
+            this.showToast('Insufficient wallet balance.');
+            return;
+        }
+        this.updateUserWallet(currentUser.id, this.cartTotal(), 'subtract');
+        this.addTransaction({
+          userId: currentUser.id,
+          date: new Date(),
+          type: 'Debit',
+          amount: this.cartTotal(),
+          description: `Order #${newOrder.id}`
+        });
+    }
+
+    this.orders.update(orders => [newOrder, ...orders]);
+    this.latestOrderId.set(newOrder.id);
+    
+    try { 
+      await this.firestore.setDocument('orders', newOrder.id, newOrder);
+    } catch (e) { 
+      console.error("Failed to place order in Firestore:", e);
+      this.showToast('Order placed locally (Firestore connection failed).');
+    }
+    
+    this.cartItems.set([]);
+    this.appliedCoupon.set(null);
+    this.navigateTo('orderConfirmation');
+  }
+
+  async placeManualUpiOrder(transactionId: string) {
+    const currentUser = this.currentUser();
+    const selectedAddress = this.allAddresses().find(a => a.id === this.selectedAddressId());
+    if (!currentUser || !selectedAddress || this.cartItems().length === 0) {
+      this.showToast('Cannot place order. User, address or cart is missing.');
+      return;
+    }
+    
+    const newOrder: Order = {
+      id: `ord_${Date.now()}`,
+      userId: currentUser.id,
+      date: new Date(),
+      items: this.cartItemsWithPrices().map((item, index: number) => ({
+        id: `item_${Date.now()}_${index}`,
+        product: { ...item.product }, 
+        size: item.size,
+        quantity: item.quantity,
+        price: item.displayPrice,
+        ...(item.customization && { customization: item.customization }),
+      })),
+      totalAmount: this.cartTotal(),
+      shippingAddress: selectedAddress,
+      paymentMethod: 'UPI (Manual)',
+      status: 'Pending Verification',
+      transactionId: transactionId
+    };
+
+    this.orders.update(orders => [newOrder, ...orders]);
+    this.latestOrderId.set(newOrder.id);
+    
+    try { 
+      await this.firestore.setDocument('orders', newOrder.id, newOrder);
+    } catch (e) { 
+      console.error("Failed to place manual UPI order in Firestore:", e);
+      this.showToast('Order placed locally (Firestore connection failed).');
+    }
+    
+    this.cartItems.set([]);
+    this.appliedCoupon.set(null);
+    this.navigateTo('orderConfirmation');
+  }
+  
+  async addBanner(bannerData: Omit<HeroSlide, 'id'>) {
+    const newBanner: HeroSlide = { ...bannerData, id: `banner_${Date.now()}` };
+    this.heroSlides.update(banners => [newBanner, ...banners]);
+    this.showToast('Banner added.');
+    try {
+      const { id, ...dataToStore } = newBanner;
+      await this.firestore.setDocument('banners', newBanner.id, dataToStore);
+    } catch(e) { console.error(e); }
+  }
+
+  async deleteBanner(bannerId: string) {
+    this.heroSlides.update(banners => banners.filter(b => b.id !== bannerId));
+    this.showToast('Banner deleted.');
+    try { await this.firestore.deleteDocument('banners', bannerId); } catch(e) { console.error(e); }
+  }
+
+  async updateShippingSettings(settings: ShippingSettings) {
+    this.shippingSettings.set(settings);
+    this.showToast('Shipping settings updated.');
+    try { await this.firestore.setDocument('settings', 'shipping', settings); } catch(e) { console.error(e); }
+  }
+  async addCoupon(couponData: Omit<Coupon, 'id' | 'usedCount'>) {
+    const newCoupon: Coupon = { ...couponData, id: `C${Date.now()}`, usedCount: 0 };
+    this.coupons.update(coupons => [newCoupon, ...coupons]);
+    this.showToast('Coupon added successfully.');
+    try { await this.firestore.setDocument('coupons', newCoupon.id, newCoupon); } catch(e) { console.error(e); }
+  }
+  async deleteCoupon(couponId: string) {
+    this.coupons.update(coupons => coupons.filter(c => c.id !== couponId));
+    this.showToast('Coupon deleted.');
+    try { await this.firestore.deleteDocument('coupons', couponId); } catch(e) { console.error(e); }
+  }
+  async updateHomePageSections(sections: string[]) {
+    this.homePageSections.set(sections);
+    this.showToast('Homepage layout updated.');
+    try { await this.firestore.setDocument('settings', 'homePageSections', { value: sections }); } catch(e) { console.error(e); }
+  }
+  
+  async updateSmallBanner(banner: {img: string, link: string}) {
+    this.smallBanner.set(banner);
+    this.showToast('Small banner updated.');
+    try { await this.firestore.setDocument('settings', 'smallBanner', banner); } catch(e) { console.error(e); }
+  }
+
+  async addCategory(categoryData: Omit<Category, 'id'>) {
+      const newCategory: Category = { ...categoryData, id: `cat_${Date.now()}` };
+      this._categories.update(cats => [newCategory, ...cats]);
+      this.showToast('Category added.');
+      try { await this.firestore.setDocument('categories', newCategory.id, newCategory); } catch(e) { console.error(e); }
+  }
+
+  async updateCategory(updatedCategory: Category) {
+      this._categories.update(cats => cats.map(c => c.id === updatedCategory.id ? updatedCategory : c));
+      this.showToast('Category updated.');
+      try { await this.firestore.setDocument('categories', updatedCategory.id, updatedCategory); } catch(e) { console.error(e); }
+  }
+
+  async deleteCategory(categoryId: string) {
+      this._categories.update(cats => cats.filter(c => c.id !== categoryId));
+      this.showToast('Category deleted.');
+      try { await this.firestore.deleteDocument('categories', categoryId); } catch(e) { console.error(e); }
+  }
+
+  async addPopup(popupData: Omit<Popup, 'id'>) {
+      const newPopup: Popup = { ...popupData, id: `pop_${Date.now()}` };
+      this.popups.update(popups => [newPopup, ...popups]);
+      this.showToast('Popup added.');
+      try { await this.firestore.setDocument('popups', newPopup.id, newPopup); } catch(e) { console.error(e); }
+  }
+
+  async updatePopup(updatedPopup: Popup) {
+      this.popups.update(popups => popups.map(p => p.id === updatedPopup.id ? updatedPopup : p));
+      this.showToast('Popup updated.');
+      try { await this.firestore.setDocument('popups', updatedPopup.id, updatedPopup); } catch(e) { console.error(e); }
+  }
+
+  async deletePopup(popupId: string) {
+      this.popups.update(popups => popups.filter(p => p.id !== popupId));
+      this.showToast('Popup deleted.');
+      try { await this.firestore.deleteDocument('popups', popupId); } catch(e) { console.error(e); }
+  }
+
+  async updateContactInfo(info: { address: string; email: string; phone: string; upiId: string; qrCodeImage: string; }) {
+      this.contactInfo.set(info);
+      this.showToast('Contact info updated.');
+      try { await this.firestore.setDocument('settings', 'contactInfo', info); } catch(e) { console.error(e); }
+  }
+
+  async addFaq(faqData: { question: string, answer: string }) {
+      const newFaq: Faq = { ...faqData, id: `faq_${Date.now()}` };
+      this.faqs.update(faqs => [newFaq, ...faqs]);
+      this.showToast('FAQ added.');
+      try { await this.firestore.setDocument('faqs', newFaq.id, newFaq); } catch(e) { console.error(e); }
+  }
+
+  async updateFaq(updatedFaq: Faq) {
+      this.faqs.update(faqs => faqs.map(f => f.id === updatedFaq.id ? updatedFaq : f));
+      this.showToast('FAQ updated.');
+      try { await this.firestore.setDocument('faqs', updatedFaq.id, updatedFaq); } catch(e) { console.error(e); }
+  }
+
+  async deleteFaq(faqId: string) {
+      this.faqs.update(faqs => faqs.filter(f => f.id !== faqId));
+      this.showToast('FAQ deleted.');
+      try { await this.firestore.deleteDocument('faqs', faqId); } catch(e) { console.error(e); }
+  }
+
+  async broadcastWalletCredit(amount: number, reason: string): Promise<number> {
+    const usersToCredit = this.users().filter(u => !environment.adminEmails.includes(u.email));
+    if (usersToCredit.length === 0) {
+      this.showToast('No users to send broadcast to.');
+      return 0;
+    }
+
+    const batch = writeBatch(this.firestore.getDb());
+    const newTransactions: Transaction[] = [];
+
+    for (const user of usersToCredit) {
+      const newBalance = user.walletBalance + amount;
+      const userRef = doc(this.firestore.getDb(), 'users', user.id);
+      batch.update(userRef, { walletBalance: newBalance });
+
+      const newTx: Omit<Transaction, 'id'> = {
+        userId: user.id,
+        date: new Date(),
+        type: 'Credit',
+        amount: amount,
+        description: reason,
+      };
+      const txRef = doc(collection(this.firestore.getDb(), 'transactions'));
+      batch.set(txRef, newTx);
+      
+      newTransactions.push({ ...newTx, id: txRef.id });
+    }
+
+    try {
+      await batch.commit();
+
+      this.users.update(currentUsers => {
+        return currentUsers.map(u => {
+          const userToUpdate = usersToCredit.find(uc => uc.id === u.id);
+          if (userToUpdate) {
+            return { ...u, walletBalance: u.walletBalance + amount };
+          }
+          return u;
+        });
+      });
+      this.transactions.update(txs => [...newTransactions, ...txs]);
+
+      return usersToCredit.length;
+    } catch (e) {
+      console.error('Failed to commit wallet broadcast batch:', e);
+      throw e;
+    }
+  }
+
+  private getMockContactInfo = () => ({
+    address: '123 Fashion Ave, Style City, 560001',
+    email: 'support@crazybasket.com',
+    phone: '+91 98765 43210',
+    upiId: 'yourname@oksbi',
+    qrCodeImage: 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=yourname@oksbi%26pn=Crazy%20Basket'
+  });
+}
