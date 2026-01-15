@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, signal, computed, ElementRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
@@ -84,7 +83,8 @@ export class PullToRefreshComponent {
     this.pullPosition.set(resistedDiff);
   }
 
-  onTouchEnd() {
+  // ✅ Fixed: Added optional event argument to match the host listener
+  onTouchEnd(event?: TouchEvent) {
     if (!this.isDragging() || this.isRefreshing()) return;
 
     this.isDragging.set(false);
