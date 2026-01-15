@@ -24,9 +24,6 @@ import {
   providedIn: 'root',
 })
 export class AuthService {
-  // The problematic lazy injection of StateService has been removed.
-  // The logic that used it has been moved to StateService to fix the injection context error.
-
   private auth: Auth;
   currentUser = signal<User | null>(null);
   
@@ -35,8 +32,6 @@ export class AuthService {
 
   constructor() {
     this.auth = getAuth(app);
-    // The onAuthStateChanged callback should only be responsible for updating the raw auth state.
-    // Application-specific logic reacting to this change is now in an effect in StateService.
     onAuthStateChanged(this.auth, (user) => {
       this.currentUser.set(user);
     });
@@ -44,10 +39,10 @@ export class AuthService {
 
   setupRecaptcha(container: HTMLElement) {
     if (!this.recaptchaVerifier) {
-      // ✅ FIX: 'this.auth' must be the FIRST argument in the new Firebase SDK
+      // ✅ FIX: 'this.auth' must be the FIRST argument
       this.recaptchaVerifier = new RecaptchaVerifier(this.auth, container, {
         'size': 'invisible',
-        'callback': () => { /* reCAPTCHA solved, allows signInWithPhoneNumber */ }
+        'callback': () => { /* reCAPTCHA solved */ }
       });
     }
   }
@@ -60,7 +55,6 @@ export class AuthService {
   emailSignUp(email: string, password: string): Observable<UserCredential> {
     return from(
       createUserWithEmailAndPassword(this.auth, email, password).then(userCredential => {
-        // Send verification email upon successful signup
         sendEmailVerification(userCredential.user);
         return userCredential;
       })
