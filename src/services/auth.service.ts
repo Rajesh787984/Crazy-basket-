@@ -44,12 +44,11 @@ export class AuthService {
 
   setupRecaptcha(container: HTMLElement) {
     if (!this.recaptchaVerifier) {
-      // FIX: Changed the RecaptchaVerifier constructor signature. Some Firebase v9 SDK versions
-      // expect the `auth` object as the third argument. This resolves the `appVerificationDisabledForTesting` error.
-      this.recaptchaVerifier = new RecaptchaVerifier(container, {
+      // ✅ FIX: 'this.auth' must be the FIRST argument in the new Firebase SDK
+      this.recaptchaVerifier = new RecaptchaVerifier(this.auth, container, {
         'size': 'invisible',
         'callback': () => { /* reCAPTCHA solved, allows signInWithPhoneNumber */ }
-      }, this.auth);
+      });
     }
   }
 
