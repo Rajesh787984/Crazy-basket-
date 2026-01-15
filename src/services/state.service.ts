@@ -16,17 +16,6 @@ import { environment } from '../environments/environment';
 import { FirestoreService } from './firestore.service';
 import { doc, writeBatch, collection } from 'firebase/firestore';
 
-// ✅ Interface Fixed
-export interface ReturnRequest {
-  reason: string;
-  comment: string;
-  photoUrl?: string;
-  status: ReturnStatus;
-  requestDate?: string;
-  returnType?: string;
-  refundMethod?: string;
-}
-
 interface CartItem {
     product: Product;
     size: string;
@@ -47,6 +36,7 @@ export interface ShippingSettings {
   freeShippingThreshold: number;
 }
 
+// FIX: Added exported HeroSlide interface for use in other components.
 export interface HeroSlide {
   id: string;
   img: string;
@@ -66,7 +56,8 @@ export class StateService {
   private unsubscribers: (() => void)[] = [];
   private secondaryDataLoaded = false;
   
-  // --- STATE SIGNALS ---
+  // --- STATE SIGNALS (initialized empty, filled in init) ---
+  // FIX: Added heroSlides signal to manage hero banner data.
   heroSlides = signal<HeroSlide[]>([]);
   users = signal<User[]>([]);
   currentUser = signal<User | null>(null);
@@ -110,7 +101,7 @@ export class StateService {
   comparisonList = signal<string[]>([]);
   isInitialDataLoaded = signal(false);
 
-  // --- COMPUTED VALUES ---
+  // --- COMPUTED VALUES (declarations) ---
   readonly categories: Signal<Category[]>;
   readonly isAuthenticated: Signal<boolean>;
   readonly isAdmin: Signal<boolean>;
@@ -134,6 +125,7 @@ export class StateService {
   readonly totalUsersCount: Signal<number>;
 
   constructor() {
+    // Initialize computed properties first to ensure injection context is available
     this.categories = computed(() => {
       const cats = this._categories();
       const seen = new Set<string>();
@@ -189,8 +181,10 @@ export class StateService {
     this.pendingOrdersCount = computed(() => this.orders().filter(o => o.status === 'Confirmed' || o.status === 'Shipped' || o.status === 'Pending Verification').length);
     this.totalUsersCount = computed(() => this.users().length);
 
+    // Now run the rest of the constructor logic
     this.init();
     
+    // Setup from localStorage (for non-persistent data)
     if (typeof localStorage !== 'undefined') {
       const storedLang = localStorage.getItem('crazyBasketLang');
       if (storedLang) { this.currentLanguage.set(storedLang); }
@@ -204,6 +198,7 @@ export class StateService {
       }
     }
     
+    // Effects are now created in the service's constructor, which is an injection context.
     effect(() => {
       const authUser = this.authService.currentUser();
       if (authUser?.email) {
@@ -215,12 +210,13 @@ export class StateService {
         }
         
         if (appUser) {
+          // Backfill provider info if it's different or missing
           const currentProvider = authUser.providerData[0]?.providerId;
           if (currentProvider && appUser.provider !== currentProvider) {
             const updatedUser: User = { ...appUser, provider: currentProvider };
             this.users.update(users => users.map(u => u.id === updatedUser.id ? updatedUser : u));
             this.firestore.setDocument('users', updatedUser.id, { provider: currentProvider }).catch(e => console.error("Failed to update user provider in DB", e));
-            appUser = updatedUser;
+            appUser = updatedUser; // Ensure the rest of the effect uses the updated user
           }
         } else {
           appUser = this.createNewAppUserFromAuthUser(authUser);
@@ -261,25 +257,34 @@ export class StateService {
   }
 
   private init(): void {
+    // This method now runs in the background, not blocking app startup.
+    // ProductService starts loading on its own.
     this.loadInitialData();
   }
   
   private async loadInitialData() {
+    // Load only the data critical for the first view (Homepage)
     console.log('Loading critical initial data...');
+    
+    // These setup/seeding functions are async and can run in the background.
+    // They are not needed for the very first paint. The UI will reactively update
+    // as their data becomes available. This makes the initial load much faster.
     this.setupInitialCategories();
-    this.setupInitialProducts();
+    this.setupInitialProducts();   // This is the slowest part, containing product loading.
 
     const criticalDataPromises = [
       this.loadCollection('categories', this._categories),
-      this.loadCollection('banners', this.heroSlides),
+      this.loadCollection('banners', this.heroSlides), // Load existing banners
       this.loadDoc('settings', 'shipping', this.shippingSettings, () => ({ flatRate: 40, freeShippingThreshold: 499 })),
       this.loadDoc('settings', 'contactInfo', this.contactInfo, this.getMockContactInfo),
       this.loadDoc('settings', 'smallBanner', this.smallBanner, () => ({ img: 'https://picsum.photos/id/10/1200/200', link: 'home' })),
       (async () => {
+        // Restore slider to homepage layout and persist it.
         const newLayout = ['slider', 'deals', 'recentlyViewed', 'trending'];
         this.homePageSections.set(newLayout);
         try {
           await this.firestore.setDocument('settings', 'homePageSections', { value: newLayout });
+          console.log("Forced homepage layout update in Firestore to:", newLayout);
         } catch (e) {
           console.error(`Failed to update 'settings/homePageSections'.`, e);
         }
@@ -287,6 +292,9 @@ export class StateService {
     ];
     
     await Promise.all(criticalDataPromises);
+    
+    // After attempting to load banners, run the seeder in the background.
+    // It will only execute if the banners collection was empty.
     this.setupInitialBanners();
     
     console.log('Critical initial data loaded.');
@@ -375,6 +383,7 @@ export class StateService {
     const batch = writeBatch(this.firestore.getDb());
     let changesMade = false;
 
+    // --- Define categories to delete ---
     const categoriesToDelete = ['Beauty', 'Kids'];
     for (const catName of categoriesToDelete) {
         const catsToDelete = categories.filter(c => c.name.toLowerCase() === catName.toLowerCase());
@@ -388,6 +397,7 @@ export class StateService {
         }
     }
     
+    // --- Define categories to ensure exist ---
     const categoriesToEnsure = [
         { name: 'Men', img: 'https://picsum.photos/id/1005/200/200', bgColor: 'bg-blue-100' },
         { name: 'Women', img: 'https://picsum.photos/id/1027/200/200', bgColor: 'bg-pink-100' },
@@ -410,7 +420,7 @@ export class StateService {
       try {
         await batch.commit();
         console.log('Successfully configured categories in Firestore.');
-        await this.loadCollection('categories', this._categories); 
+        await this.loadCollection('categories', this._categories); // Reload state
         this.showToast('Default categories have been configured.');
       } catch (error) {
         console.error('Category setup failed:', error);
@@ -425,6 +435,7 @@ export class StateService {
 
     const hasMen = allProducts.some(p => p.category === 'Men');
     if (!hasMen) {
+        console.log('No "Men" products found. Creating sample products...');
         const menProducts: Omit<Product, 'id'>[] = [
             {
                 name: "Graphic Print T-Shirt", brand: "Urban Threads", price: 799, originalPrice: 1299, discount: 38, rating: 4.5, reviews: 320,
@@ -449,6 +460,7 @@ export class StateService {
 
     const hasWomen = allProducts.some(p => p.category === 'Women');
     if (!hasWomen) {
+        console.log('No "Women" products found. Creating sample products...');
         const womenProducts: Omit<Product, 'id'>[] = [
             {
                 name: "Floral A-Line Dress", brand: "Femina", price: 1499, originalPrice: 2499, discount: 40, rating: 4.6, reviews: 540,
@@ -473,6 +485,7 @@ export class StateService {
 
     const hasCustomizeGift = allProducts.some(p => p.category === 'Customize Gift');
     if (!hasCustomizeGift) {
+        console.log('No "Customize Gift" products found. Creating sample products...');
         const giftProducts: Omit<Product, 'id'>[] = [
             {
                 name: 'Personalized Photo Mug', brand: 'GiftCo', price: 499, originalPrice: 799, discount: 37, rating: 4.8, reviews: 150,
@@ -497,6 +510,7 @@ export class StateService {
 
     const hasElectronics = allProducts.some(p => p.category === 'Electronics');
     if (!hasElectronics) {
+        console.log('No "Electronics" products found. Creating sample products...');
         const electronicProducts: Omit<Product, 'id'>[] = [
             {
                 name: 'Wireless Bluetooth Earbuds', brand: 'SoundWave', price: 1999, originalPrice: 3999, discount: 50, rating: 4.5, reviews: 1250,
@@ -525,7 +539,7 @@ export class StateService {
   }
   
   private async setupInitialBanners() {
-    await this.productService.productsLoaded; 
+    await this.productService.productsLoaded; // ensure products are available if we need them
     const allProducts = this.productService.getAllProducts();
     if (this.heroSlides().length === 0 && allProducts.length > 5) {
       console.log('No hero banners found. Creating default banners...');
@@ -560,6 +574,7 @@ export class StateService {
     }
   }
 
+  // --- METHODS ---
   setLanguage(code: string) {
     this.currentLanguage.set(code);
     if (typeof localStorage !== 'undefined') {
@@ -592,7 +607,7 @@ export class StateService {
 
   navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product, orderItem?: { orderId: string, itemId: string } }) {
     if (!this.secondaryDataLoaded) {
-      this.loadSecondaryData(); 
+      this.loadSecondaryData(); // Fire and forget
       this.secondaryDataLoaded = true;
     }
     
@@ -736,6 +751,7 @@ export class StateService {
     } catch(e) { console.error(e); }
   }
   
+  // Comparison List Methods
   toggleComparison(productId: string) {
     this.comparisonList.update(list => {
       const index = list.indexOf(productId);
@@ -756,6 +772,7 @@ export class StateService {
     this.comparisonList.set([]);
   }
 
+  // Cart, Wishlist, etc. (mostly local state)
   trackProductView(productId: string) { this.addRecentlyViewed(productId); }
   addRecentlyViewed(productId: string) { this.recentlyViewed.update(current => [productId, ...current.filter(id => id !== productId)].slice(0, 5)); }
   addToCart(product: Product, size: string, customization?: { photoPreviewUrl: string; fileName: string; }) {
@@ -772,7 +789,7 @@ export class StateService {
   
   applyCoupon(code: string) {
     const trimmedCode = code.trim();
-    if (!trimmedCode) { 
+    if (!trimmedCode) { // Handle coupon removal or empty input
       this.appliedCoupon.set(null);
       return;
     }
@@ -806,6 +823,7 @@ export class StateService {
   setFilters(filters: ActiveFilters) { this.activeFilters.set(filters); }
   resetFilters() { this.activeFilters.set({ priceRanges: [], discounts: [] }); }
   
+  // Address Methods (Async)
   async addAddress(address: Omit<Address, 'id' | 'isDefault' | 'userId'>) {
       const user = this.currentUser();
       if (!user) { this.showToast('You must be logged in.'); return; }
@@ -851,6 +869,7 @@ export class StateService {
     try { await batch.commit(); this.showToast('Default address updated.'); } catch (e) { console.error(e); }
   }
 
+  // Order & Review Methods (Async)
   async addReview(review: { productId: string, rating: number, comment: string }) {
     const author = this.currentUser()?.name || 'Anonymous';
     const newReview: Review = { ...review, author, date: new Date(), id: `rev_${Date.now()}` };
@@ -864,11 +883,13 @@ export class StateService {
     try { await this.firestore.deleteDocument('reviews', reviewToDelete.id); } catch(e) { console.error(e); }
   }
   async updateOrderStatus(orderId: string, status: OrderStatus) {
+    // ... logic for referral commission calculation
     this.orders.update(orders => orders.map(order => order.id === orderId ? { ...order, status } : order));
     this.showToast(`Order status updated to ${status}.`);
     try { await this.firestore.setDocument('orders', orderId, { status }); } catch(e) { console.error(e); }
   }
-  
+  // FIX: Updated the method signature to accept all required fields for a return request
+  // and correctly construct the `returnRequest` object to match the OrderItem interface.
   async requestReturn(orderId: string, itemId: string, reason: string, comment: string, returnType: 'Refund' | 'Exchange', refundMethod: 'Original Payment Method' | 'Wallet', photoUrl?: string) {
     this.orders.update(orders => orders.map(order => {
         if (order.id === orderId) {
@@ -882,7 +903,7 @@ export class StateService {
                 comment, 
                 photoUrl, 
                 status: 'Pending' as const 
-              } as any 
+              } 
             } : item);
             const updatedOrder = { ...order, items: updatedItems };
             this.firestore.setDocument('orders', orderId, updatedOrder).catch(console.error);
@@ -893,7 +914,6 @@ export class StateService {
     this.showToast('Return requested successfully.');
     this.navigateTo('orders');
   }
-
   async updateReturnStatus(orderId: string, itemId: string, status: ReturnStatus) {
       let orderToUpdate: Order | undefined, itemToUpdate: OrderItem | undefined;
       this.orders.update(orders => orders.map(order => {
@@ -901,8 +921,7 @@ export class StateService {
               const updatedItems = order.items.map(item => {
                   if (item.id === itemId && item.returnRequest) {
                       itemToUpdate = item;
-                      const req = item.returnRequest as any;
-                      if(status === 'Approved' && req.returnType === 'Refund' && req.refundMethod === 'Wallet' && order.userId) {
+                      if(status === 'Approved' && item.returnRequest.returnType === 'Refund' && item.returnRequest.refundMethod === 'Wallet' && order.userId) {
                           this.updateUserWallet(order.userId, item.price * item.quantity, 'add');
                           this.addTransaction({ userId: order.userId, date: new Date(), type: 'Credit', amount: item.price * item.quantity, description: `Refund for Order #${order.id}` });
                       }
@@ -918,7 +937,6 @@ export class StateService {
       }));
       this.showToast(`Return status updated to ${status}.`);
   }
-
   async placeOrder() {
     const currentUser = this.currentUser();
     const selectedAddress = this.allAddresses().find(a => a.id === this.selectedAddressId());
@@ -933,7 +951,7 @@ export class StateService {
       date: new Date(),
       items: this.cartItemsWithPrices().map((item, index: number) => ({
         id: `item_${Date.now()}_${index}`,
-        product: { ...item.product }, 
+        product: { ...item.product }, // Sanitize product object for Firestore
         size: item.size,
         quantity: item.quantity,
         price: item.displayPrice,
@@ -945,6 +963,7 @@ export class StateService {
       status: 'Confirmed'
     };
 
+    // If paying with wallet, deduct balance
     if (this.selectedPaymentMethod() === 'Wallet') {
         if (currentUser.walletBalance < this.cartTotal()) {
             this.showToast('Insufficient wallet balance.');
@@ -974,7 +993,6 @@ export class StateService {
     this.appliedCoupon.set(null);
     this.navigateTo('orderConfirmation');
   }
-
   async placeManualUpiOrder(transactionId: string) {
     const currentUser = this.currentUser();
     const selectedAddress = this.allAddresses().find(a => a.id === this.selectedAddressId());
@@ -989,7 +1007,7 @@ export class StateService {
       date: new Date(),
       items: this.cartItemsWithPrices().map((item, index: number) => ({
         id: `item_${Date.now()}_${index}`,
-        product: { ...item.product }, 
+        product: { ...item.product }, // Sanitize product object for Firestore
         size: item.size,
         quantity: item.quantity,
         price: item.displayPrice,
@@ -1017,16 +1035,20 @@ export class StateService {
     this.navigateTo('orderConfirmation');
   }
   
+  // Admin Methods (Async)
+  // FIX: Added method to add a new hero banner.
   async addBanner(bannerData: Omit<HeroSlide, 'id'>) {
     const newBanner: HeroSlide = { ...bannerData, id: `banner_${Date.now()}` };
     this.heroSlides.update(banners => [newBanner, ...banners]);
     this.showToast('Banner added.');
     try {
+      // Don't store the ID as a field in the document itself
       const { id, ...dataToStore } = newBanner;
       await this.firestore.setDocument('banners', newBanner.id, dataToStore);
     } catch(e) { console.error(e); }
   }
 
+  // FIX: Added method to delete a hero banner.
   async deleteBanner(bannerId: string) {
     this.heroSlides.update(banners => banners.filter(b => b.id !== bannerId));
     this.showToast('Banner deleted.');
@@ -1173,6 +1195,7 @@ export class StateService {
     }
   }
 
+  // --- MOCK DATA GETTERS (for default values) ---
   private getMockContactInfo = () => ({
     address: '123 Fashion Ave, Style City, 560001',
     email: 'support@crazybasket.com',

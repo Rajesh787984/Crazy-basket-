@@ -1,38 +1,33 @@
-
-
-<div class="p-4 bg-gray-100 min-h-full">
-  <h1 class="text-xl font-bold mb-4">My Orders ({{orders().length}})</h1>
+<div class="p-4 bg-gray-100 dark:bg-gray-900 min-h-full">
+  <h1 class="text-xl font-bold mb-4 dark:text-gray-100">My Orders ({{orders().length}})</h1>
 
   @if(orders().length > 0) {
     <div class="space-y-4">
       @for(order of orders(); track order.id) {
-        <div class="bg-white rounded-lg shadow p-4">
-          <div class="border-b pb-2 mb-2">
-            <h2 class="font-bold">Order #{{order.id}}</h2>
-            <p class="text-sm text-gray-500">Placed on: {{ order.date | date: 'longDate' }}</p>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div class="border-b dark:border-gray-700 pb-2 mb-2">
+            <h2 class="font-bold dark:text-gray-100">Order #{{order.id}}</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">Placed on: {{ order.date | date: 'longDate' }}</p>
           </div>
           <div>
             @for(item of order.items; track item.id) {
-              <div class="flex items-start space-x-4 py-3 border-b last:border-b-0">
+              <div class="flex items-start space-x-4 py-3 border-b dark:border-gray-700 last:border-b-0">
                 <img [ngSrc]="item.product.images[0]" [alt]="item.product.name" class="w-16 h-20 object-cover rounded-md" width="64" height="80">
                 <div class="flex-grow">
-                  <p class="font-semibold">{{ item.product.brand }}</p>
-                  <p class="text-sm text-gray-600">{{ item.product.name }}</p>
-                  <p class="text-xs text-gray-500">Qty: {{item.quantity}} | Size: {{item.size}}</p>
+                  <p class="font-semibold dark:text-gray-100">{{ item.product.brand }}</p>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">{{ item.product.name }}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-500">Qty: {{item.quantity}} | Size: {{item.size}}</p>
                   
                   @if (order.status === 'Delivered') {
                     <div class="mt-2 flex items-center space-x-2">
-                      <button (click)="requestReturn(order.id, item.id)" [disabled]="!!item.returnRequest" class="text-xs font-bold text-pink-600 border border-pink-500 rounded-full px-3 py-1 hover:bg-pink-50 disabled:opacity-50 disabled:cursor-not-allowed">
+                      <button (click)="requestReturn(order.id, item.id)" [disabled]="!!item.returnRequest" class="text-xs font-bold text-pink-600 dark:text-pink-400 border border-pink-500 dark:border-pink-500 rounded-full px-3 py-1 hover:bg-pink-50 dark:hover:bg-pink-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
                         {{ 'profile.returns' | translate }}
                       </button>
                       @if (item.returnRequest) {
                         <span class="font-semibold px-2 py-1 rounded-full text-xs"
-                          [class.bg-yellow-100]="item.returnRequest.status === 'Pending'"
-                          [class.text-yellow-800]="item.returnRequest.status === 'Pending'"
-                          [class.bg-green-100]="item.returnRequest.status === 'Approved'"
-                          [class.text-green-800]="item.returnRequest.status === 'Approved'"
-                          [class.bg-red-100]="item.returnRequest.status === 'Rejected'"
-                          [class.text-red-800]="item.returnRequest.status === 'Rejected'">
+                          [class.bg-yellow-100]="item.returnRequest.status === 'Pending'" [class.text-yellow-800]="item.returnRequest.status === 'Pending'" [class.dark:bg-yellow-900/50]="item.returnRequest.status === 'Pending'" [class.dark:text-yellow-300]="item.returnRequest.status === 'Pending'"
+                          [class.bg-green-100]="item.returnRequest.status === 'Approved'" [class.text-green-800]="item.returnRequest.status === 'Approved'" [class.dark:bg-green-900/50]="item.returnRequest.status === 'Approved'" [class.dark:text-green-300]="item.returnRequest.status === 'Approved'"
+                          [class.bg-red-100]="item.returnRequest.status === 'Rejected'" [class.text-red-800]="item.returnRequest.status === 'Rejected'" [class.dark:bg-red-900/50]="item.returnRequest.status === 'Rejected'" [class.dark:text-red-300]="item.returnRequest.status === 'Rejected'">
                           {{ item.returnRequest.status }}
                         </span>
                       }
@@ -42,19 +37,14 @@
               </div>
             }
           </div>
-          <div class="flex justify-between items-center mt-2 pt-2 border-t">
-            <span class="text-sm">Total: <span class="font-bold">₹{{ order.totalAmount }}</span></span>
+          <div class="flex justify-between items-center mt-2 pt-2 border-t dark:border-gray-700">
+            <span class="text-sm dark:text-gray-300">Total: <span class="font-bold">₹{{ order.totalAmount }}</span></span>
             <span class="text-xs font-semibold px-2 py-1 rounded-full"
-                  [class.bg-green-100]="order.status === 'Delivered'"
-                  [class.text-green-800]="order.status === 'Delivered'"
-                  [class.bg-blue-100]="order.status === 'Shipped'"
-                  [class.text-blue-800]="order.status === 'Shipped'"
-                  [class.bg-yellow-100]="order.status === 'Confirmed'"
-                  [class.text-yellow-800]="order.status === 'Confirmed'"
-                  [class.bg-gray-200]="order.status === 'Pending Verification'"
-                  [class.text-gray-800]="order.status === 'Pending Verification'"
-                  [class.bg-red-100]="order.status === 'Cancelled'"
-                  [class.text-red-800]="order.status === 'Cancelled'">
+                  [class.bg-green-100]="order.status === 'Delivered'" [class.text-green-800]="order.status === 'Delivered'" [class.dark:bg-green-900/50]="order.status === 'Delivered'" [class.dark:text-green-300]="order.status === 'Delivered'"
+                  [class.bg-blue-100]="order.status === 'Shipped'" [class.text-blue-800]="order.status === 'Shipped'" [class.dark:bg-blue-900/50]="order.status === 'Shipped'" [class.dark:text-blue-300]="order.status === 'Shipped'"
+                  [class.bg-yellow-100]="order.status === 'Confirmed'" [class.text-yellow-800]="order.status === 'Confirmed'" [class.dark:bg-yellow-900/50]="order.status === 'Confirmed'" [class.dark:text-yellow-300]="order.status === 'Confirmed'"
+                  [class.bg-gray-200]="order.status === 'Pending Verification'" [class.text-gray-800]="order.status === 'Pending Verification'" [class.dark:bg-gray-700]="order.status === 'Pending Verification'" [class.dark:text-gray-200]="order.status === 'Pending Verification'"
+                  [class.bg-red-100]="order.status === 'Cancelled'" [class.text-red-800]="order.status === 'Cancelled'" [class.dark:bg-red-900/50]="order.status === 'Cancelled'" [class.dark:text-red-300]="order.status === 'Cancelled'">
               ● {{ order.status }}
             </span>
           </div>
@@ -62,9 +52,9 @@
       }
     </div>
   } @else {
-    <div class="text-center py-20">
-      <h2 class="text-xl font-bold">No orders yet!</h2>
-      <p class="text-gray-500 mt-1">Looks like you haven't made any purchases.</p>
+    <div class="text-center py-20 bg-white dark:bg-gray-800 rounded-lg">
+      <h2 class="text-xl font-bold dark:text-gray-100">No orders yet!</h2>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Looks like you haven't made any purchases.</p>
       <button (click)="stateService.navigateTo('home')" class="mt-6 px-6 py-2 bg-pink-500 text-white font-bold rounded-md">
         START SHOPPING
       </button>

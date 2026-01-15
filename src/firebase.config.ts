@@ -4,7 +4,9 @@ import { initializeApp, FirebaseApp } from 'firebase/app';
 // This resolves startup errors. If the connection fails (e.g., due to security rules),
 // the app will gracefully fall back to using local mock data.
 const firebaseConfig = {
-  apiKey: "AIzaSyA-IMOBdZK4NfcyfHShkM1h0UcfJ0pjom8",
+  // FIX: Restored the full, valid API key. A previous change incorrectly removed the final characters,
+  // causing an "auth/api-key-not-valid" error.
+  apiKey: "AIzaSyAIMOBdZK4NfcyfHShkM1h0UcfJ0pjom8-Q",
   authDomain: "crazybasketmall.firebaseapp.com",
   projectId: "crazybasketmall",
   storageBucket: "crazybasketmall.appspot.com",

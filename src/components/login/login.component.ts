@@ -4,7 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { StateService } from '../../services/state.service';
 import { AuthService } from '../../services/auth.service';
 import { from } from 'rxjs';
-import { sendEmailVerification } from 'firebase/auth';
+import { sendEmailVerification, UserCredential } from 'firebase/auth';
 
 type EmailView = 'login' | 'signup' | 'reset';
 
@@ -183,7 +183,58 @@ export class LoginComponent implements AfterViewInit {
     this.isLoading.set(true);
     this.errorMessage.set(null);
     const otp = this.mobileForm.value.otp!;
+    const mobile = this.mobileForm.value.mobile!;
 
+    // Demo user login flow
+    if (mobile === '9876543210' && otp === '123456') {
+      const demoEmail = 'demouser@crazybasket.com';
+      const demoPassword = 'password123';
+
+      const handleSuccessfulLogin = (userCredential: UserCredential) => {
+          this.isLoading.set(false);
+          this.stateService.showToast(`Welcome, Demo User!`);
+          const lastView = this.stateService.lastNavigatedView();
+          this.stateService.navigateTo(lastView !== 'login' ? lastView : 'home');
+      };
+      
+      const handleError = (error: any) => {
+          this.isLoading.set(false);
+          this.errorMessage.set(this.formatFirebaseError(error));
+      };
+
+      const attemptLogin = () => {
+        this.authService.emailLogin(demoEmail, demoPassword).subscribe({
+          next: handleSuccessfulLogin,
+          error: handleError
+        });
+      };
+
+      // Try to login first
+      this.authService.emailLogin(demoEmail, demoPassword).subscribe({
+        next: handleSuccessfulLogin,
+        error: (err) => {
+          // If user doesn't exist, create it.
+          if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential' || err.code === 'auth/invalid-login-credentials') {
+            this.authService.emailSignUp(demoEmail, demoPassword).subscribe({
+              next: () => {
+                // After signup, login again.
+                attemptLogin();
+              },
+              error: (signupErr) => {
+                handleError(signupErr);
+              }
+            });
+          } else {
+            // Other login error
+            handleError(err);
+          }
+        }
+      });
+
+      return; // End of demo user flow
+    }
+
+    // Original logic for real users
     this.authService.verifyOtp(otp).subscribe({
       next: (userCredential) => {
         this.isLoading.set(false);

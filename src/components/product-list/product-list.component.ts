@@ -17,7 +17,13 @@ export class ProductListComponent implements OnInit {
   stateService: StateService = inject(StateService);
   private seoService: SeoService = inject(SeoService);
 
-  allProducts = signal<Product[]>([]);
+  allProducts = computed(() => {
+    const category = this.stateService.selectedCategory();
+    if (category) {
+      return this.productService.getProducts(category);
+    }
+    return this.productService.getAllProducts();
+  });
   showFilters = signal(false);
 
   // Filter options derived from products
@@ -144,9 +150,6 @@ export class ProductListComponent implements OnInit {
   }
 
   ngOnInit() {
-    const category = this.stateService.selectedCategory();
-    const products = category ? this.productService.getProducts(category) : this.productService.getAllProducts();
-    this.allProducts.set(products);
     const currentFilters = this.stateService.activeFilters();
     this.localFilters.set({
       priceRanges: [...currentFilters.priceRanges],
