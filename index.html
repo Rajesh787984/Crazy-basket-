@@ -3,39 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <title>Crazy Basket</title>
+  <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <link rel="icon" type="image/x-icon" href="favicon.ico" />
-  <meta name="theme-color" content="#f43f5e">
-  
   <script defer src="https://cdn.tailwindcss.com"></script>
-  <style>
-    ::-webkit-scrollbar { width: 6px; height: 6px; }
-    ::-webkit-scrollbar-thumb { background: #f43f5e; border-radius: 10px; }
-    ::-webkit-scrollbar-track { background: #fce7f3; }
-    body { -webkit-user-select: none; user-select: none; }
-    input, textarea { -webkit-user-select: text; user-select: text; }
-  </style>
-
-<script type="importmap">
-{
-  "imports": {
-    "rxjs": "https://esm.sh/rxjs@^7.8.2?conditions=es2015",
-    "rxjs/operators": "https://esm.sh/rxjs@^7.8.2/operators?conditions=es2015",
-    "@angular/compiler": "https://esm.sh/@angular/compiler@^18.0.0?external=rxjs",
-    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@^18.0.0?external=rxjs",
-    "@angular/common/http": "https://esm.sh/@angular/common@^18.0.0/http?external=rxjs",
-    "@angular/core": "https://esm.sh/@angular/core@^18.0.0?external=rxjs",
-    "@angular/common": "https://esm.sh/@angular/common@^18.0.0?external=rxjs",
-    "@angular/forms": "https://esm.sh/@angular/forms@^18.0.0?external=rxjs",
-    "@angular/router": "https://esm.sh/@angular/router@^18.0.0?external=rxjs",
-    "@angular/core/rxjs-interop": "https://esm.sh/@angular/core@^18.0.0/rxjs-interop?external=rxjs"
-  }
-}
-</script>
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 antialiased font-sans text-gray-800 dark:text-gray-200">
+  
   <app-root></app-root>
 
-  <script type="module" src="src/main.ts"></script>
-</body>
+  </body>
 </html>
