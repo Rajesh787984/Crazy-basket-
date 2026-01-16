@@ -16,7 +16,7 @@
               "base": "./dist",
               "browser": "."
             },
-            "index": "src/index.html",
+            "index": "index.html",
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.json"
           },
