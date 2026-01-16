@@ -32,4 +32,6 @@ export interface Order {
   paymentMethod: string;
   status: OrderStatus;
   transactionId?: string;
+  expectedDeliveryDate?: Date;
+  statusHistory?: { status: OrderStatus; date: Date }[];
 }

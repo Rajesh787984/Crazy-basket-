@@ -38,7 +38,14 @@
             }
           </div>
           <div class="flex justify-between items-center mt-2 pt-2 border-t dark:border-gray-700">
-            <span class="text-sm dark:text-gray-300">Total: <span class="font-bold">₹{{ order.totalAmount }}</span></span>
+            <div>
+              <span class="text-sm dark:text-gray-300">Total: <span class="font-bold">₹{{ order.totalAmount }}</span></span>
+              @if (order.status !== 'Cancelled') {
+                <button (click)="trackOrder(order.id)" class="ml-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">
+                  Track Order
+                </button>
+              }
+            </div>
             <span class="text-xs font-semibold px-2 py-1 rounded-full"
                   [class.bg-green-100]="order.status === 'Delivered'" [class.text-green-800]="order.status === 'Delivered'" [class.dark:bg-green-900/50]="order.status === 'Delivered'" [class.dark:text-green-300]="order.status === 'Delivered'"
                   [class.bg-blue-100]="order.status === 'Shipped'" [class.text-blue-800]="order.status === 'Shipped'" [class.dark:bg-blue-900/50]="order.status === 'Shipped'" [class.dark:text-blue-300]="order.status === 'Shipped'"

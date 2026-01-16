@@ -1,5 +1,3 @@
-
-
 import { Component, ChangeDetectionStrategy, inject } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
@@ -18,5 +16,9 @@ export class OrderHistoryComponent {
 
   requestReturn(orderId: string, itemId: string) {
     this.stateService.navigateTo('return-request', { orderItem: { orderId, itemId } });
+  }
+
+  trackOrder(orderId: string) {
+    this.stateService.navigateTo('orderTracking', { orderId });
   }
 }

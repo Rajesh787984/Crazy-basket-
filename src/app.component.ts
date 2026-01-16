@@ -55,6 +55,7 @@ import { SeoService } from './services/seo.service';
 import { ComparisonTrayComponent } from './components/comparison-tray/comparison-tray.component';
 import { ProductComparisonComponent } from './components/product-comparison/product-comparison.component';
 import { AdminBannersComponent } from './components/admin/admin-banners/admin-banners.component';
+import { OrderTrackingComponent } from './components/order-tracking/order-tracking.component';
 
 
 declare var Tawk_API: any;
@@ -128,6 +129,7 @@ declare var Tawk_API: any;
                       @case ('manual-payment') { <app-manual-payment></app-manual-payment> }
                       @case ('orderConfirmation') { <app-order-confirmation></app-order-confirmation> }
                       @case ('orders') { <app-order-history></app-order-history> }
+                      @case ('orderTracking') { <app-order-tracking></app-order-tracking> }
                       @case ('address-form') { <app-address-form></app-address-form> }
                       @case ('myntra-insider') { <app-myntra-insider></app-myntra-insider> }
                       @case ('profile-edit') { <app-profile-edit></app-profile-edit> }
@@ -214,6 +216,7 @@ declare var Tawk_API: any;
     ManualPaymentComponent,
     OrderConfirmationComponent,
     OrderHistoryComponent,
+    OrderTrackingComponent,
     MyntraInsiderComponent,
     AdminComponent,
     ProfileEditComponent,

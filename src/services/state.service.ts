@@ -77,7 +77,7 @@ export class StateService {
   
   // Local/Session State
   currentView = signal<string>('home');
-  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'wishlist', 'partner-program', 'coupons', 'return-request', 'manage-addresses']);
+  protectedViews = new Set(['profile', 'address', 'payment', 'orders', 'address-form', 'admin', 'profile-edit', 'manual-payment', 'admin-bulk-updater', 'admin-flash-sales', 'wallet', 'wishlist', 'partner-program', 'coupons', 'return-request', 'manage-addresses', 'orderTracking']);
   lastNavigatedView = signal<string>('home');
   currentAdminView = signal<string>('dashboard');
   productToEdit = signal<Product | null>(null);
@@ -85,6 +85,7 @@ export class StateService {
   toastMessage = signal<string | null>(null);
   currentLanguage = signal<string>('en');
   selectedProductId = signal<string | null>(null);
+  selectedOrderId = signal<string | null>(null);
   selectedCategory = signal<string | null>(null);
   searchQuery = signal<string>('');
   activeFilters = signal<ActiveFilters>({ priceRanges: [], discounts: [] });
@@ -308,7 +309,9 @@ export class StateService {
         const unsubscribe = this.firestore.listenToCollection<Order>('orders', (data) => {
             const ordersWithDates = data.map(order => ({
               ...order,
-              date: (order.date as any).toDate ? (order.date as any).toDate() : new Date(order.date)
+              date: (order.date as any).toDate ? (order.date as any).toDate() : new Date(order.date),
+              expectedDeliveryDate: (order.expectedDeliveryDate as any)?.toDate ? (order.expectedDeliveryDate as any).toDate() : order.expectedDeliveryDate ? new Date(order.expectedDeliveryDate) : undefined,
+              statusHistory: order.statusHistory?.map(h => ({...h, date: (h.date as any).toDate ? (h.date as any).toDate() : new Date(h.date)}))
             }));
             this.orders.set(ordersWithDates);
 
@@ -605,7 +608,7 @@ export class StateService {
     return newUser;
   }
 
-  navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product, orderItem?: { orderId: string, itemId: string } }) {
+  navigateTo(view: string, data?: { productId?: string; category?: string; searchQuery?: string, addressToEdit?: Address, productToEdit?: Product, orderItem?: { orderId: string, itemId: string }, orderId?: string }) {
     if (!this.secondaryDataLoaded) {
       this.loadSecondaryData(); // Fire and forget
       this.secondaryDataLoaded = true;
@@ -623,6 +626,7 @@ export class StateService {
     }
     this.lastNavigatedView.set(this.currentView());
     if (data?.productId) this.selectedProductId.set(data.productId);
+    if (data?.orderId) this.selectedOrderId.set(data.orderId);
     if (data?.addressToEdit) this.addressToEdit.set(data.addressToEdit); else this.addressToEdit.set(null);
     if (data?.productToEdit) this.productToEdit.set(data.productToEdit); else this.productToEdit.set(null);
     if (data?.orderItem) this.selectedOrderItemForReturn.set(data.orderItem); else this.selectedOrderItemForReturn.set(null);
@@ -884,9 +888,24 @@ export class StateService {
   }
   async updateOrderStatus(orderId: string, status: OrderStatus) {
     // ... logic for referral commission calculation
-    this.orders.update(orders => orders.map(order => order.id === orderId ? { ...order, status } : order));
+    this.orders.update(orders => orders.map(order => {
+        if (order.id === orderId) {
+            const newHistoryEntry = { status, date: new Date() };
+            // Add new entry, but prevent adding duplicate status if it's already the last one
+            const currentHistory = order.statusHistory || [{ status: order.status, date: order.date }];
+            const lastStatus = currentHistory[currentHistory.length-1]?.status;
+
+            const updatedHistory = lastStatus !== status ? [...currentHistory, newHistoryEntry] : currentHistory;
+            
+            const updatedOrder = { ...order, status, statusHistory: updatedHistory };
+            
+            this.firestore.setDocument('orders', orderId, { status, statusHistory: updatedHistory }).catch(console.error);
+            
+            return updatedOrder;
+        }
+        return order;
+    }));
     this.showToast(`Order status updated to ${status}.`);
-    try { await this.firestore.setDocument('orders', orderId, { status }); } catch(e) { console.error(e); }
   }
   // FIX: Updated the method signature to accept all required fields for a return request
   // and correctly construct the `returnRequest` object to match the OrderItem interface.
@@ -960,7 +979,9 @@ export class StateService {
       totalAmount: this.cartTotal(),
       shippingAddress: selectedAddress,
       paymentMethod: this.selectedPaymentMethod(),
-      status: 'Confirmed'
+      status: 'Confirmed',
+      expectedDeliveryDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+      statusHistory: [{ status: 'Confirmed', date: new Date() }]
     };
 
     // If paying with wallet, deduct balance
@@ -1017,7 +1038,9 @@ export class StateService {
       shippingAddress: selectedAddress,
       paymentMethod: 'UPI (Manual)',
       status: 'Pending Verification',
-      transactionId: transactionId
+      transactionId: transactionId,
+      expectedDeliveryDate: new Date(new Date().getTime() + 5 * 24 * 60 * 60 * 1000), // 5 days from now
+      statusHistory: [{ status: 'Pending Verification', date: new Date() }]
     };
 
     this.orders.update(orders => [newOrder, ...orders]);
