@@ -27,11 +27,13 @@ export class HomeComponent implements OnInit, OnDestroy {
   private sliderTimeoutId: any = null;
   private readonly SLIDER_INTERVAL = 3000; 
 
+  // ✅ NOTE: अगर आप डिस्काउंट नहीं दिखाना चाहते तो HTML में बदलेंगे, 
+  // यहाँ डेटा रहने दें, इससे एरर नहीं आएगा।
   topDeals = [
-    { title: 'FLAT 50% OFF', discount: 'On Everything', img: 'https://picsum.photos/seed/deal1/400/300', category: 'Men' },
-    { title: 'MIN. 40% OFF', discount: 'Tops & Tees', img: 'https://picsum.photos/seed/deal2/400/300', category: 'Women' },
-    { title: 'UP TO 60% OFF', discount: 'Casual Shoes', img: 'https://picsum.photos/seed/deal3/400/300', category: 'Men' },
-    { title: 'MIN. 50% OFF', discount: 'Ethnic Wear', img: 'https://picsum.photos/seed/deal4/400/300', category: 'Women' }
+    { title: 'New Collection', discount: 'Trending', img: 'https://picsum.photos/seed/deal1/400/300', category: 'Men' },
+    { title: 'Best Sellers', discount: 'Hot', img: 'https://picsum.photos/seed/deal2/400/300', category: 'Women' },
+    { title: 'New Arrivals', discount: 'Fresh', img: 'https://picsum.photos/seed/deal3/400/300', category: 'Men' },
+    { title: 'Premium', discount: 'Exclusive', img: 'https://picsum.photos/seed/deal4/400/300', category: 'Women' }
   ];
 
   constructor() {
@@ -67,6 +69,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   private setupSeo() {
     this.seoService.updateTitle(); 
     this.seoService.updateDescription(); 
+    // अपनी असली इमेज URL यहाँ डालें
     this.seoService.updateImageUrl('https://crazy-basket-app.com/social-preview.png'); 
 
     const schema = {
