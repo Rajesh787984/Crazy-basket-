@@ -13,6 +13,7 @@ import { SeoService } from '../../services/seo.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  // ✅ FIX: inject() को यहाँ सबसे ऊपर रखा गया है
   stateService: StateService = inject(StateService);
   productService: ProductService = inject(ProductService);
   private seoService: SeoService = inject(SeoService);
@@ -24,7 +25,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   activeSlide = signal(0);
   
   private sliderTimeoutId: any = null;
-  private readonly SLIDER_INTERVAL = 3000; // 3 seconds
+  private readonly SLIDER_INTERVAL = 3000; 
 
   topDeals = [
     { title: 'FLAT 50% OFF', discount: 'On Everything', img: 'https://picsum.photos/seed/deal1/400/300', category: 'Men' },
@@ -64,9 +65,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   private setupSeo() {
-    this.seoService.updateTitle(); // Use default title from service
-    this.seoService.updateDescription(); // Use default description from service
-    this.seoService.updateImageUrl('https://crazy-basket-app.com/social-preview.png'); // Replace with a real preview image URL
+    this.seoService.updateTitle(); 
+    this.seoService.updateDescription(); 
+    this.seoService.updateImageUrl('https://crazy-basket-app.com/social-preview.png'); 
 
     const schema = {
       '@context': 'https://schema.org',
@@ -106,7 +107,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     }
 
     if (userInitiated) {
-      this.startSlider(); // Reset timer on manual action
+      this.startSlider(); 
     } else {
       this.startSlider();
     }
@@ -114,7 +115,7 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   goToSlide(index: number) {
     this.activeSlide.set(index);
-    this.startSlider(); // Reset timer
+    this.startSlider(); 
   }
 
   onBannerClick(slide: HeroSlide) {
