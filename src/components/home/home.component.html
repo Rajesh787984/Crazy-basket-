@@ -1,99 +1,82 @@
-@if (heroSlides().length === 0) {
-  <div class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black text-white">
-    <h1 class="text-4xl md:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-500 animate-pulse">
-      Loading Crazy Designs!
-    </h1>
-    <p class="mt-4 text-lg md:text-xl text-gray-300">Upgrade your style with our latest collection.</p>
-    
-    <div class="mt-8 w-64 h-1.5 bg-gray-800 rounded-full overflow-hidden">
-      <div class="h-full bg-pink-500 w-1/2 animate-[spin_2s_linear_infinite]"></div>
-    </div>
-  </div>
-}
-
-@else {
-  <div class="animate-in fade-in duration-700">
-    @for(section of homePageSections(); track section) {
-      @switch (section) {
+<div class="">
+  @for(section of homePageSections(); track section) {
+    @switch (section) {
+      @case ('slider') {
+        <!-- Hero Slider -->
+        <section class="relative w-full h-48 md:h-64 lg:h-80 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8" aria-label="Featured Promotions" (mouseenter)="stopSlider()" (mouseleave)="startSlider()">
+          <!-- Slides with fade transition -->
+          @for(slide of heroSlides(); track slide.id; let i = $index) {
+            <div class="absolute inset-0 transition-opacity duration-700 ease-in-out"
+                 [class.opacity-100]="activeSlide() === i"
+                 [class.opacity-0]="activeSlide() !== i"
+                 [class.z-10]="activeSlide() === i"
+                 [class.cursor-pointer]="slide.productId"
+                 (click)="onBannerClick(slide)">
+              <img [ngSrc]="slide.img" fill [priority]="i < 2" class="w-full h-full object-cover" [alt]="slide.title || 'Promotional banner ' + (i + 1)">
+               <div class="absolute inset-0 bg-black/30 flex flex-col items-center justify-center p-4 text-center text-white text-shadow">
+                  <h2 class="text-2xl md:text-4xl font-extrabold">{{ slide.title }}</h2>
+                  <p class="mt-2 text-md md:text-xl">{{ slide.subtitle }}</p>
+              </div>
+            </div>
+          }
         
-        @case ('slider') {
-          <section class="relative w-full h-48 md:h-64 lg:h-80 overflow-hidden -mx-4 sm:-mx-6 lg:-mx-8" aria-label="Featured Promotions" (mouseenter)="stopSlider()" (mouseleave)="startSlider()">
-            @for(slide of heroSlides(); track slide.id; let i = $index) {
-              <div class="absolute inset-0 transition-opacity duration-700 ease-in-out"
-                   [class.opacity-100]="activeSlide() === i"
-                   [class.opacity-0]="activeSlide() !== i"
-                   [class.z-10]="activeSlide() === i"
-                   [class.cursor-pointer]="slide.productId"
-                   (click)="onBannerClick(slide)">
-                <img [ngSrc]="slide.imageUrl" fill [priority]="i < 2" class="w-full h-full object-cover" [alt]="slide.title || 'Promotional banner ' + (i + 1)">
-                
-                @if (slide.title) {
-                  <div class="absolute inset-0 bg-black/30 flex flex-col items-center justify-center p-4 text-center text-white text-shadow">
-                    <h2 class="text-2xl md:text-4xl font-extrabold">{{ slide.title }}</h2>
-                    <p class="mt-2 text-md md:text-xl">{{ slide.subtitle }}</p>
-                  </div>
-                }
-              </div>
-            }
-            
-            @if (heroSlides().length > 1) {
-              <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-20">
-                @for(slide of heroSlides(); track $index; let i = $index) {
-                  <button (click)="goToSlide(i); $event.stopPropagation()" class="w-2.5 h-2.5 rounded-full transition-all duration-300"
-                          [class.bg-white]="activeSlide() === i"
-                          [class.w-4]="activeSlide() === i"
-                          [class.bg-white/50]="activeSlide() !== i" [attr.aria-label]="'Go to slide ' + (i + 1)"></button>
-                }
-              </div>
-            }
-          </section>
-        }
-
-        @case ('deals') {
-          <section class="p-4" aria-labelledby="top-deals-heading">
-            <h2 id="top-deals-heading" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">
-              EXPLORE COLLECTIONS
-            </h2>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              @for(deal of topDeals; track deal.title; let i = $index) {
-                <div (click)="selectCategory(deal.category === 'Men' ? 'Men' : 'Women')" class="cursor-pointer group relative overflow-hidden rounded-lg">
-                  <img [ngSrc]="deal.img" [alt]="deal.title" width="400" height="300" class="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-110" [priority]="i < 4">
-                  
-                  <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex flex-col justify-end p-3">
-                    <h3 class="text-white font-bold text-lg">{{ deal.category }}</h3>
-                    <p class="text-gray-300 text-sm">New Arrivals</p>
-                  </div>
-                </div>
+          <!-- Navigation Dots -->
+          @if (heroSlides().length > 1) {
+            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-2 z-20">
+              @for(slide of heroSlides(); track $index; let i = $index) {
+                <button (click)="goToSlide(i); $event.stopPropagation()" class="w-2.5 h-2.5 rounded-full transition-all duration-300"
+                        [class.bg-white]="activeSlide() === i"
+                        [class.w-4]="activeSlide() === i"
+                        [class.bg-white/50]="activeSlide() !== i" [attr.aria-label]="'Go to slide ' + (i + 1)"></button>
               }
             </div>
-          </section>
-        }
-
-        @case ('recentlyViewed') {
-          <app-recently-viewed></app-recently-viewed>
-        }
-
-        @case ('trending') {
-          <section class="px-4 pb-4 mt-6" aria-labelledby="trending-heading">
-            <h2 id="trending-heading" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">TRENDING FOR YOU</h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              @for(product of featuredProducts(); track product.id; let i = $index) {
-                <div (click)="viewProduct(product.id)" class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer group border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
-                  <div class="relative">
-                    <img [ngSrc]="product.images[0]" [alt]="product.name" width="300" height="400" class="w-full aspect-[3/4] object-cover" [priority]="i < 5">
-                  </div>
-                  <div class="p-2">
-                    <h3 class="font-bold truncate text-gray-800 dark:text-gray-100">{{ product.name }}</h3>
-                    <div class="flex items-center space-x-2 mt-1">
-                      <p class="font-bold text-gray-900 dark:text-white">₹{{ product.price }}</p>
-                    </div>
+          }
+        </section>
+      }
+      @case ('deals') {
+        <!-- Top Deals -->
+        <section class="p-4" aria-labelledby="top-deals-heading">
+          <h2 id="top-deals-heading" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">TOP DEALS</h2>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @for(deal of topDeals; track deal.title; let i = $index) {
+              <div (click)="selectCategory(deal.category === 'Men' ? 'Men' : 'Women')" class="cursor-pointer group">
+                <img [ngSrc]="deal.img" [alt]="deal.title" width="400" height="300" class="w-full h-auto rounded-lg shadow-md group-hover:shadow-xl transition-shadow transform group-hover:scale-105 duration-300" [priority]="i < 4">
+                <h3 class="font-bold mt-2 text-gray-700 dark:text-gray-200">{{ deal.title }}</h3>
+                <p class="text-sm text-green-600 dark:text-green-400 font-semibold">{{ deal.discount }}</p>
+              </div>
+            }
+          </div>
+        </section>
+      }
+      @case ('recentlyViewed') {
+        <!-- Recently Viewed Section -->
+        <app-recently-viewed></app-recently-viewed>
+      }
+      @case ('trending') {
+        <!-- Trending Products -->
+        <section class="px-4 pb-4" aria-labelledby="trending-heading">
+          <h2 id="trending-heading" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">TRENDING FOR YOU</h2>
+          <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            @for(product of featuredProducts(); track product.id; let i = $index) {
+              <div (click)="viewProduct(product.id)" class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden cursor-pointer group border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow duration-300">
+                <div class="relative">
+                  <img [ngSrc]="product.images[0]" [alt]="product.name" width="300" height="400" class="w-full aspect-[3/4] object-cover" [priority]="i < 5">
+                </div>
+                <div class="p-2">
+                  <h3 class="font-bold truncate text-gray-800 dark:text-gray-100">{{ product.name }}</h3>
+                  <div class="flex items-center space-x-2 mt-1">
+                    <p class="font-bold text-gray-900 dark:text-white">₹{{ product.price }}</p>
+                    @if(product.discount > 0) {
+                      <p class="text-xs text-gray-500 dark:text-gray-400 line-through">₹{{ product.originalPrice }}</p>
+                      <p class="text-xs text-orange-500 font-semibold">({{ product.discount }}% OFF)</p>
+                    }
                   </div>
                 </div>
-              }
-            </div>
-          </section>
-        }
+              </div>
+            }
+          </div>
+        </section>
       }
     }
-  </div>
-}
+  }
+</div>

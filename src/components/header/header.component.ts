@@ -1,17 +1,16 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal, computed, ElementRef } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
-import { FormsModule } from '@angular/forms';
 
 type Suggestion = Product | { type: 'category', name: string };
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
-  imports: [CommonModule, FormsModule, NgOptimizedImage],
+  imports: [CommonModule, NgOptimizedImage, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '(document:click)': 'onDocumentClick($event)',

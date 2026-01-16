@@ -1,13 +1,11 @@
-
-
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
-import { StateService } from '../../../services/state.service';
 import { FormsModule } from '@angular/forms';
+import { StateService } from '../../../services/state.service';
 
 @Component({
   selector: 'app-payment-summary',
-  imports: [CommonModule, FormsModule, DecimalPipe],
+  imports: [CommonModule, DecimalPipe, FormsModule],
   templateUrl: './payment-summary.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

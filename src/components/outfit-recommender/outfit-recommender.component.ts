@@ -1,10 +1,10 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { GeminiService } from '../../services/gemini.service';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../models/product.model';
-import { FormsModule } from '@angular/forms';
 
 interface OutfitRecommendation {
   category: string;

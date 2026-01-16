@@ -15,6 +15,7 @@ import { User as FirebaseUser } from 'firebase/auth';
 import { environment } from '../environments/environment';
 import { FirestoreService } from './firestore.service';
 import { doc, writeBatch, collection } from 'firebase/firestore';
+import { ThemeSettings } from '../models/theme-settings.model';
 
 interface CartItem {
     product: Product;
@@ -74,6 +75,7 @@ export class StateService {
   contactInfo = signal<any>({});
   homePageSections = signal<string[]>([]);
   smallBanner = signal<{img: string, link: string} | null>(null);
+  themeSettings = signal<ThemeSettings>({ defaultTheme: 'dark', allowUserOverride: true });
   
   // Local/Session State
   currentView = signal<string>('home');
@@ -278,6 +280,7 @@ export class StateService {
       this.loadCollection('banners', this.heroSlides), // Load existing banners
       this.loadDoc('settings', 'shipping', this.shippingSettings, () => ({ flatRate: 40, freeShippingThreshold: 499 })),
       this.loadDoc('settings', 'contactInfo', this.contactInfo, this.getMockContactInfo),
+      this.loadDoc('settings', 'theme', this.themeSettings, () => ({ defaultTheme: 'dark', allowUserOverride: true })),
       this.loadDoc('settings', 'smallBanner', this.smallBanner, () => ({ img: 'https://picsum.photos/id/10/1200/200', link: 'home' })),
       (async () => {
         // Restore slider to homepage layout and persist it.
@@ -1167,6 +1170,12 @@ export class StateService {
       this.faqs.update(faqs => faqs.filter(f => f.id !== faqId));
       this.showToast('FAQ deleted.');
       try { await this.firestore.deleteDocument('faqs', faqId); } catch(e) { console.error(e); }
+  }
+
+  async updateThemeSettings(settings: ThemeSettings) {
+    this.themeSettings.set(settings);
+    this.showToast('Theme settings updated.');
+    try { await this.firestore.setDocument('settings', 'theme', settings); } catch(e) { console.error(e); }
   }
 
   async broadcastWalletCredit(amount: number, reason: string): Promise<number> {

@@ -15,6 +15,9 @@ export interface OrderItem {
     fileName: string;
   };
   returnRequest?: {
+    requestDate: string; // ISO string
+    returnType: 'Refund' | 'Exchange';
+    refundMethod: 'Original Payment Method' | 'Wallet';
     reason: string;
     comment: string;
     photoUrl?: string;

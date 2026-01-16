@@ -20,6 +20,7 @@ import { AdminCouponsComponent } from './admin-coupons/admin-coupons.component';
 import { AdminReturnsComponent } from './admin-returns/admin-returns.component';
 import { AdminBannersComponent } from './admin-banners/admin-banners.component';
 import { AdminBroadcastComponent } from './admin-broadcast/admin-broadcast.component';
+import { AdminThemeComponent } from './admin-theme/admin-theme.component';
 
 
 @Component({
@@ -45,7 +46,8 @@ import { AdminBroadcastComponent } from './admin-broadcast/admin-broadcast.compo
     AdminReferralsComponent,
     AdminCouponsComponent,
     AdminReturnsComponent,
-    AdminBroadcastComponent
+    AdminBroadcastComponent,
+    AdminThemeComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -69,6 +71,7 @@ export class AdminComponent {
     { id: 'banners', name: 'Hero Banners', icon: 'M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z' },
     { id: 'homepage', name: 'Homepage Layout', icon: 'M4 6h16M4 12h16M4 18h7' },
     { id: 'popups', name: 'Popups', icon: 'M15 15l-2 5L9 9l11 4-5 2Zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122' },
+    { id: 'theme', name: 'Theme', icon: 'M7 21a4 4 0 01-4-4V7a4 4 0 014-4h10a4 4 0 014 4v10a4 4 0 01-4 4H7zM7 5a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2H7zM12 7a5 5 0 000 10V7z' },
     { id: 'bulk-updater', name: 'Bulk Updater', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
     { id: 'flash-sales', name: 'Flash Sales', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
     { id: 'live-chat', name: 'Live Chat', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },

@@ -1,7 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, OnInit, effect } from '@angular/core';
 import { CommonModule, NgOptimizedImage, DOCUMENT } from '@angular/common';
 import { StateService } from './services/state.service';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { HeaderComponent } from './components/header/header.component';
 import { SidebarComponent } from './components/sidebar/sidebar.component';
@@ -56,6 +55,7 @@ import { ComparisonTrayComponent } from './components/comparison-tray/comparison
 import { ProductComparisonComponent } from './components/product-comparison/product-comparison.component';
 import { AdminBannersComponent } from './components/admin/admin-banners/admin-banners.component';
 import { OrderTrackingComponent } from './components/order-tracking/order-tracking.component';
+import { Theme } from './models';
 
 
 declare var Tawk_API: any;
@@ -75,33 +75,6 @@ declare var Tawk_API: any;
               You are impersonating {{ stateService.currentUser()?.name }}. 
               <button (click)="stateService.stopImpersonating()" class="underline ml-4">Return to Admin</button>
             </div>
-          }
-          
-          @if(currentView() === 'home') {
-            <!-- Shop by Category -->
-            <section class="p-4 lg:hidden" aria-labelledby="category-heading">
-              <h2 id="category-heading" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">SHOP BY CATEGORY</h2>
-              <div class="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-8 gap-4">
-                @for(category of categories(); track category.id; let i = $index) {
-                  <div (click)="selectCategory(category.name)" class="text-center cursor-pointer group">
-                    <div class="w-16 h-16 lg:w-20 lg:h-20 mx-auto rounded-full overflow-hidden shadow-md group-hover:shadow-lg transition-shadow transform group-hover:scale-105 duration-300" [class]="category.bgColor">
-                      <img [ngSrc]="category.img" [alt]="category.name" width="80" height="80" class="w-full h-full object-cover" [priority]="i < 8">
-                    </div>
-                    <p class="mt-2 font-semibold text-xs lg:text-sm text-gray-700 dark:text-gray-300">{{ category.name }}</p>
-                  </div>
-                }
-              </div>
-            </section>
-          }
-
-          @if(currentView() === 'home' && smallBanner(); as banner) {
-            <section class="px-4 py-2 lg:px-0" aria-label="Special Offer">
-              <div class="max-w-7xl mx-auto">
-                <div (click)="onSmallBannerClick(banner.link)" class="cursor-pointer group overflow-hidden rounded-lg shadow-md">
-                    <img [ngSrc]="banner.img" alt="Special Offer Banner" width="1200" height="200" class="w-full h-auto object-cover group-hover:scale-105 transition-transform duration-300" priority>
-                </div>
-              </div>
-            </section>
           }
 
           <div class="flex flex-1 overflow-y-hidden w-full">
@@ -198,8 +171,6 @@ declare var Tawk_API: any;
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
     HeaderComponent,
     SidebarComponent,
     HomeComponent,
@@ -268,8 +239,6 @@ export class AppComponent implements OnInit {
   toastMessage = this.stateService.toastMessage;
   isImpersonating = this.stateService.isImpersonating;
   currentUser = this.stateService.currentUser;
-  smallBanner = this.stateService.smallBanner;
-  categories = this.stateService.categories;
 
   showPopup = signal(false);
 
@@ -339,13 +308,61 @@ export class AppComponent implements OnInit {
         // The default case will be handled by HomeComponent, ProductListComponent, etc.
       }
     });
+
+    // Effect to handle showing the welcome popup
+    effect(() => {
+      // Run this only after initial critical data (like popups) is loaded
+      if (this.stateService.isInitialDataLoaded()) {
+        if (this.stateService.activePopup() && !sessionStorage.getItem('popupShown')) {
+          // Use a timeout to ensure the popup doesn't appear too abruptly on load
+          setTimeout(() => this.showPopup.set(true), 1500);
+        }
+      }
+    });
+
+    // Effect to manage application theme
+    effect(() => {
+      // This effect will re-run whenever the admin settings change.
+      this.applyTheme();
+    });
+    window.addEventListener('storage', (event) => {
+        if (event.key === 'theme') {
+            this.applyTheme();
+        }
+    });
   }
 
   ngOnInit() {
-    // Only show the popup if one is active and it hasn't been shown in this session
-    if (this.stateService.activePopup() && !sessionStorage.getItem('popupShown')) {
-      // Use a timeout to ensure the popup doesn't appear too abruptly on load
-      setTimeout(() => this.showPopup.set(true), 1500);
+    this.applyTheme();
+  }
+
+  private applyTheme() {
+    const settings = this.stateService.themeSettings();
+    const userPreference = localStorage.getItem('theme') as Theme | null;
+
+    let theme: Theme;
+
+    if (settings.allowUserOverride && userPreference) {
+        theme = userPreference;
+    } else {
+        theme = settings.defaultTheme;
+    }
+
+    const root = this.document.documentElement;
+    
+    if (theme === 'system') {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemPrefersDark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    } else {
+      if (theme === 'dark') {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
     }
   }
 
@@ -357,13 +374,5 @@ export class AppComponent implements OnInit {
   navigateToPopupLink(link: string) {
     this.stateService.navigateTo(link);
     this.closePopup();
-  }
-
-  onSmallBannerClick(link: string) {
-    this.stateService.navigateTo(link);
-  }
-
-  selectCategory(categoryName: string) {
-    this.stateService.navigateTo('productList', { category: categoryName });
   }
 }

@@ -1,0 +1,62 @@
+<div>
+  <h1 class="text-3xl font-bold mb-6 text-gray-100">Theme Settings</h1>
+
+  <div class="bg-white p-6 rounded-lg shadow-lg max-w-2xl">
+    <h2 class="text-xl font-bold mb-2 text-gray-900">Manage Website Appearance</h2>
+    <p class="text-sm text-gray-600 mb-6">
+      Control the default color scheme for all users and decide if they can choose their own preference.
+    </p>
+
+    <form [formGroup]="themeForm" (ngSubmit)="saveSettings()" class="space-y-8">
+      <!-- Default Theme Selection -->
+      <div>
+        <label class="block text-md font-bold text-gray-800 mb-3">Default Theme</label>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Light Mode -->
+          <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-all" [class.border-pink-500]="themeForm.value.defaultTheme === 'light'" [class.bg-pink-50]="themeForm.value.defaultTheme === 'light'">
+            <input type="radio" formControlName="defaultTheme" value="light" class="h-5 w-5 text-pink-600 focus:ring-pink-500">
+            <div class="ml-3">
+                <span class="font-semibold text-gray-800">Light</span>
+            </div>
+          </label>
+          <!-- Dark Mode -->
+          <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-all" [class.border-pink-500]="themeForm.value.defaultTheme === 'dark'" [class.bg-pink-50]="themeForm.value.defaultTheme === 'dark'">
+            <input type="radio" formControlName="defaultTheme" value="dark" class="h-5 w-5 text-pink-600 focus:ring-pink-500">
+            <div class="ml-3">
+                <span class="font-semibold text-gray-800">Dark</span>
+            </div>
+          </label>
+          <!-- System Preference -->
+          <label class="flex items-center p-4 border rounded-lg cursor-pointer transition-all" [class.border-pink-500]="themeForm.value.defaultTheme === 'system'" [class.bg-pink-50]="themeForm.value.defaultTheme === 'system'">
+            <input type="radio" formControlName="defaultTheme" value="system" class="h-5 w-5 text-pink-600 focus:ring-pink-500">
+            <div class="ml-3">
+                <span class="font-semibold text-gray-800">System</span>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <!-- User Override Toggle -->
+      <div>
+        <label class="block text-md font-bold text-gray-800 mb-3">User Preference</label>
+        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+            <div>
+                <h4 class="font-semibold text-gray-800">Allow User Override</h4>
+                <p class="text-sm text-gray-500">If enabled, users can choose their own theme, overriding the default.</p>
+            </div>
+             <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" formControlName="allowUserOverride" class="sr-only peer">
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-pink-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-pink-600"></div>
+            </label>
+        </div>
+      </div>
+      
+      <!-- Submit Button -->
+      <div class="text-right pt-4 border-t">
+        <button type="submit" [disabled]="themeForm.invalid || !themeForm.dirty" class="bg-pink-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-pink-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+          Save Settings
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

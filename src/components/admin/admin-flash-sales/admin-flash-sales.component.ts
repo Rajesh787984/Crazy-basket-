@@ -1,10 +1,9 @@
-
 import { Component, ChangeDetectionStrategy, inject, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { StateService } from '../../../services/state.service';
 import { ProductService } from '../../../services/product.service';
 import { Product } from '../../../models/product.model';
-import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-admin-flash-sales',
@@ -62,7 +61,7 @@ export class AdminFlashSalesComponent {
         const updatedProduct = { ...product };
         delete updatedProduct.flashSale;
         this.productService.updateProduct(updatedProduct);
-        this.stateService.showToast(`Flash sale removed for ${updatedProduct.name}.`);
+        this.stateService.showToast(`Flash sale removed for ${product.name}.`);
     }
   }
 

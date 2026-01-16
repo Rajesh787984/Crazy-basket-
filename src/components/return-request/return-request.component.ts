@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
 import { StateService } from '../../services/state.service';
@@ -8,7 +7,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-return-request',
-  imports: [CommonModule, ReactiveFormsModule, TranslatePipe, NgOptimizedImage],
+  imports: [CommonModule, TranslatePipe, NgOptimizedImage, ReactiveFormsModule],
   templateUrl: './return-request.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -30,6 +29,8 @@ export class ReturnRequestComponent implements OnInit {
   returnForm = this.fb.group({
     reason: ['', Validators.required],
     comment: ['', Validators.required],
+    returnType: ['Refund' as const, Validators.required],
+    refundMethod: ['Wallet' as const, Validators.required]
   });
 
   ngOnInit() {
@@ -67,16 +68,14 @@ export class ReturnRequestComponent implements OnInit {
     }
     const data = this.orderItemData();
     if (data) {
-      const { reason, comment } = this.returnForm.value;
-      // FIX: The method signature for requestReturn expects additional arguments for returnType and refundMethod.
-      // This change provides default values to match the expected signature and passes photoUrl in the correct argument position.
+      const { reason, comment, returnType, refundMethod } = this.returnForm.value;
       this.stateService.requestReturn(
         data.order.id,
         data.item.id,
         reason!,
         comment!,
-        'Refund',
-        'Wallet',
+        returnType!,
+        refundMethod!,
         this.uploadedPhoto()?.previewUrl
       );
     }

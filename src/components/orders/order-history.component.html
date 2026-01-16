@@ -5,9 +5,19 @@
     <div class="space-y-4">
       @for(order of orders(); track order.id) {
         <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
-          <div class="border-b dark:border-gray-700 pb-2 mb-2">
-            <h2 class="font-bold dark:text-gray-100">Order #{{order.id}}</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Placed on: {{ order.date | date: 'longDate' }}</p>
+          <div class="border-b dark:border-gray-700 pb-2 mb-2 flex justify-between items-center">
+            <div>
+              <h2 class="font-bold dark:text-gray-100">Order #{{order.id}}</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Placed on: {{ order.date | date: 'longDate' }}</p>
+            </div>
+             <span class="text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap"
+                  [class.bg-green-100]="order.status === 'Delivered'" [class.text-green-800]="order.status === 'Delivered'" [class.dark:bg-green-900/50]="order.status === 'Delivered'" [class.dark:text-green-300]="order.status === 'Delivered'"
+                  [class.bg-blue-100]="order.status === 'Shipped'" [class.text-blue-800]="order.status === 'Shipped'" [class.dark:bg-blue-900/50]="order.status === 'Shipped'" [class.dark:text-blue-300]="order.status === 'Shipped'"
+                  [class.bg-yellow-100]="order.status === 'Confirmed'" [class.text-yellow-800]="order.status === 'Confirmed'" [class.dark:bg-yellow-900/50]="order.status === 'Confirmed'" [class.dark:text-yellow-300]="order.status === 'Confirmed'"
+                  [class.bg-gray-200]="order.status === 'Pending Verification'" [class.text-gray-800]="order.status === 'Pending Verification'" [class.dark:bg-gray-700]="order.status === 'Pending Verification'" [class.dark:text-gray-200]="order.status === 'Pending Verification'"
+                  [class.bg-red-100]="order.status === 'Cancelled'" [class.text-red-800]="order.status === 'Cancelled'" [class.dark:bg-red-900/50]="order.status === 'Cancelled'" [class.dark:text-red-300]="order.status === 'Cancelled'">
+              ● {{ order.status }}
+            </span>
           </div>
           <div>
             @for(item of order.items; track item.id) {
@@ -21,7 +31,7 @@
                   @if (order.status === 'Delivered') {
                     <div class="mt-2 flex items-center space-x-2">
                       <button (click)="requestReturn(order.id, item.id)" [disabled]="!!item.returnRequest" class="text-xs font-bold text-pink-600 dark:text-pink-400 border border-pink-500 dark:border-pink-500 rounded-full px-3 py-1 hover:bg-pink-50 dark:hover:bg-pink-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
-                        {{ 'profile.returns' | translate }}
+                        {{ 'returns.request_return' | translate }}
                       </button>
                       @if (item.returnRequest) {
                         <span class="font-semibold px-2 py-1 rounded-full text-xs"
@@ -40,20 +50,16 @@
           <div class="flex justify-between items-center mt-2 pt-2 border-t dark:border-gray-700">
             <div>
               <span class="text-sm dark:text-gray-300">Total: <span class="font-bold">₹{{ order.totalAmount }}</span></span>
-              @if (order.status !== 'Cancelled') {
-                <button (click)="trackOrder(order.id)" class="ml-4 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline">
-                  Track Order
-                </button>
-              }
             </div>
-            <span class="text-xs font-semibold px-2 py-1 rounded-full"
-                  [class.bg-green-100]="order.status === 'Delivered'" [class.text-green-800]="order.status === 'Delivered'" [class.dark:bg-green-900/50]="order.status === 'Delivered'" [class.dark:text-green-300]="order.status === 'Delivered'"
-                  [class.bg-blue-100]="order.status === 'Shipped'" [class.text-blue-800]="order.status === 'Shipped'" [class.dark:bg-blue-900/50]="order.status === 'Shipped'" [class.dark:text-blue-300]="order.status === 'Shipped'"
-                  [class.bg-yellow-100]="order.status === 'Confirmed'" [class.text-yellow-800]="order.status === 'Confirmed'" [class.dark:bg-yellow-900/50]="order.status === 'Confirmed'" [class.dark:text-yellow-300]="order.status === 'Confirmed'"
-                  [class.bg-gray-200]="order.status === 'Pending Verification'" [class.text-gray-800]="order.status === 'Pending Verification'" [class.dark:bg-gray-700]="order.status === 'Pending Verification'" [class.dark:text-gray-200]="order.status === 'Pending Verification'"
-                  [class.bg-red-100]="order.status === 'Cancelled'" [class.text-red-800]="order.status === 'Cancelled'" [class.dark:bg-red-900/50]="order.status === 'Cancelled'" [class.dark:text-red-300]="order.status === 'Cancelled'">
-              ● {{ order.status }}
-            </span>
+            @if (order.status !== 'Cancelled') {
+              <button (click)="trackOrder(order.id)" class="flex items-center justify-center bg-pink-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-pink-600 text-sm transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10l2 2h8a1 1 0 001-1zM3 11h10M16 16l4-4m0 0l-4-4m4 4H9" />
+                </svg>
+                Track Order
+              </button>
+            }
           </div>
         </div>
       }

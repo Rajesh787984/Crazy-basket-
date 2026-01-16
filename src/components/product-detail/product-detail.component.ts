@@ -1,9 +1,10 @@
 import { Component, ChangeDetectionStrategy, inject, signal, computed, OnDestroy, effect } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Product } from '../../models/product.model';
 import { ProductService } from '../../services/product.service';
 import { StateService } from '../../services/state.service';
-import { FormBuilder, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, Validators } from '@angular/forms';
 import { Review } from '../../models/review.model';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SeoService } from '../../services/seo.service';
@@ -12,7 +13,7 @@ import { SeoService } from '../../services/seo.service';
 @Component({
   selector: 'app-product-detail',
   templateUrl: './product-detail.component.html',
-  imports: [CommonModule, ReactiveFormsModule, NgOptimizedImage],
+  imports: [CommonModule, NgOptimizedImage, FormsModule, ReactiveFormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ProductDetailComponent implements OnDestroy {

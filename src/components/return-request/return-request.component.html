@@ -16,7 +16,37 @@
     </div>
 
     <!-- Return Form -->
-    <form [formGroup]="returnForm" (ngSubmit)="submitRequest()" class="bg-white dark:bg-gray-800 p-4 rounded-lg space-y-4">
+    <form [formGroup]="returnForm" (ngSubmit)="submitRequest()" class="bg-white dark:bg-gray-800 p-4 rounded-lg space-y-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Return Type *</label>
+        <div class="mt-2 flex space-x-4">
+          <label class="flex items-center">
+            <input type="radio" formControlName="returnType" value="Refund" class="h-4 w-4 text-pink-600 focus:ring-pink-500">
+            <span class="ml-2 text-gray-800 dark:text-gray-200">Refund</span>
+          </label>
+          <label class="flex items-center">
+            <input type="radio" formControlName="returnType" value="Exchange" class="h-4 w-4 text-pink-600 focus:ring-pink-500">
+            <span class="ml-2 text-gray-800 dark:text-gray-200">Exchange</span>
+          </label>
+        </div>
+      </div>
+
+      @if(returnForm.value.returnType === 'Refund') {
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Refund Method *</label>
+          <div class="mt-2 flex space-x-4">
+            <label class="flex items-center">
+              <input type="radio" formControlName="refundMethod" value="Wallet" class="h-4 w-4 text-pink-600 focus:ring-pink-500">
+              <span class="ml-2 text-gray-800 dark:text-gray-200">Credit to Wallet</span>
+            </label>
+            <label class="flex items-center">
+              <input type="radio" formControlName="refundMethod" value="Original Payment Method" class="h-4 w-4 text-pink-600 focus:ring-pink-500">
+              <span class="ml-2 text-gray-800 dark:text-gray-200">Original Payment Method</span>
+            </label>
+          </div>
+        </div>
+      }
+
       <div>
         <label for="reason" class="block text-sm font-medium text-gray-700 dark:text-gray-300">{{ 'returns.reason' | translate }} *</label>
         <select formControlName="reason" id="reason" class="mt-1 w-full px-4 py-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 dark:text-white">

@@ -1,13 +1,13 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { CommonModule, NgOptimizedImage } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { StateService } from '../../services/state.service';
 import { Product } from '../../models/product.model';
-import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-cart',
   templateUrl: './cart.component.html',
-  imports: [CommonModule, FormsModule, NgOptimizedImage],
+  imports: [CommonModule, NgOptimizedImage, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CartComponent {

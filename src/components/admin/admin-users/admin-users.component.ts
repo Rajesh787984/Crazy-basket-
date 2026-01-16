@@ -1,4 +1,3 @@
-
 import { Component, ChangeDetectionStrategy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -67,7 +66,7 @@ export class AdminUsersComponent {
   }
 
   getUserOrderCount(userId: string): number {
-    return this.orders().filter(order => order.shippingAddress.name === this.users().find(u => u.id === userId)?.name).length;
+    return this.orders().filter(order => order.userId === userId).length;
   }
   
   toggleBlacklist(userId: string) {
